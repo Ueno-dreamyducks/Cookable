@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name" translatable="false">Nav Cook</string>
+    <string name="is_first_preference_key" translatable="false">is_first_open</string>
+
+    <string name="title_welcome">Welcome</string>
+    <string name="title_homepage">Homepage</string>
+    <string name="title_recipe_overview">Recipe Overview</string>
+    <string name="title_search">Search</string>
+
+    <string name="hello">Hello %s</string>
+    <string name="search_recipe">Search Recipe</string>
+    <string name="bbq">BBQ</string>
+    <string name="vegetarian">Vegetarian</string>
+    <string name="snack">Snack</string>
+    <string name="sweet">Sweet</string>
+</resources>
