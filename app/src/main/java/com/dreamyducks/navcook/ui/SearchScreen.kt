@@ -104,7 +104,7 @@ fun SearchScreen(
                     onGenreClick = {},
                     genreHeader = stringResource(R.string.sweet),
                     modifier = modifier
-                        .weight(1f)
+                        .weight(1f) //a
                 )
             }
         }
