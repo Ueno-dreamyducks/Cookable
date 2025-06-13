@@ -10,22 +10,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
@@ -35,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
+import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 
@@ -45,7 +43,6 @@ fun Homepage(
     navigateToOverview: () -> Unit,
     navigateToSearch: () -> Unit,
 ) {
-    val searchInput by viewModel.searchInput.collectAsState()
     val context = LocalContext.current
 
     Box(
@@ -84,12 +81,19 @@ fun Homepage(
 
             OutlinedButton(
                 onClick = {
-                    viewModel.tts(
+                    viewModel.textToSpeech(
                         context = context
                     )
                 }
             ) {
                 Text("Speech test")
+            }
+            OutlinedButton(
+                onClick = {
+                    viewModel.stopTextToSpeech()
+                }
+            ) {
+                Text("stop text to speech")
             }
         }
     }
@@ -149,46 +153,23 @@ private fun TodaysRecipe() {
 
 @Composable
 fun HomepageBottomAppBar(
+    currentRoute: String,
+    onNavigationClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     BottomAppBar {
-        Row(
-            horizontalArrangement = Arrangement.SpaceAround,
-            modifier = modifier
-                .fillMaxWidth()
-        ) {
-            BottomBarItem(
-                icon = Icons.Outlined.Search,
-                description = "Search"
-            )
-            BottomBarItem(
-                icon = Icons.Outlined.Menu,
-                description = "Menu"
+        navigationItems.forEach { item ->
+            NavigationBarItem(
+                icon = { Icon(item.icon, contentDescription = null) },
+                label = { Text(stringResource(item.title)) },
+                onClick = {
+                    if(item.route != currentRoute) {
+                        onNavigationClick(item.route)
+                    }
+                },
+                selected = item.route == currentRoute
             )
         }
-    }
-}
-
-@Composable
-private fun BottomBarItem(
-    icon: ImageVector,
-    description: String,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier
-            .clickable(
-                onClick = {}
-            )
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null
-        )
-        Text(
-            text = description
-        )
     }
 }
 
@@ -196,7 +177,10 @@ private fun BottomBarItem(
 @Composable
 fun HomepageBottomBarPreview() {
     NavCookTheme {
-        HomepageBottomAppBar()
+        HomepageBottomAppBar(
+            currentRoute = "",
+            onNavigationClick = {}
+        )
     }
 }
 

@@ -3,7 +3,6 @@ package com.dreamyducks.navcook
 import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContentTransitionScope
-import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -26,6 +25,8 @@ import com.dreamyducks.navcook.ui.Homepage
 import com.dreamyducks.navcook.ui.HomepageBottomAppBar
 import com.dreamyducks.navcook.ui.NavCookViewModel
 import com.dreamyducks.navcook.ui.RecipeOverviewScreen
+import com.dreamyducks.navcook.ui.SearchResultScreen
+import com.dreamyducks.navcook.ui.SearchResultTopBar
 import com.dreamyducks.navcook.ui.SearchScreen
 import com.dreamyducks.navcook.ui.SearchTopAppBar
 import com.dreamyducks.navcook.ui.WelcomeScreen
@@ -35,7 +36,8 @@ enum class NavCookScreen(@StringRes val title: Int) {
     Welcome(title = R.string.title_welcome),
     Homepage(title = R.string.title_homepage),
     RecipeOverview(title = R.string.title_recipe_overview),
-    Search(title = R.string.title_search)
+    Search(title = R.string.title_search),
+    SearchResult(title = R.string.title_search_result)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,23 +56,43 @@ fun NavCookApp(
     }
 
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
-
+    val currentRoute = currentBackStackEntry?.destination?.route
 
     Scaffold(
         topBar = {
-            when (currentBackStackEntry?.destination?.route) {
+            when (currentRoute) {
                 NavCookScreen.Homepage.name -> CenterAlignedTopAppBar(
                     title = {
                         Text("Homepage")
                     },
                     modifier = modifier
                 )
-                NavCookScreen.Search.name -> SearchTopAppBar({})
+
+                NavCookScreen.Search.name -> SearchTopAppBar(
+                    navigateUp = {
+                        navController.popBackStack()
+                    }
+                )
+
+                NavCookScreen.SearchResult.name -> SearchResultTopBar(
+                    viewModel = navCookViewModel,
+                    onNavigationBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
         },
         bottomBar = {
-            when (currentBackStackEntry?.destination?.route) {
-                NavCookScreen.Homepage.name -> HomepageBottomAppBar()
+            when (currentRoute) {
+                NavCookScreen.Homepage.name, NavCookScreen.Search.name, NavCookScreen.SearchResult.name ->
+                    HomepageBottomAppBar(
+                        currentRoute = currentRoute,
+                        onNavigationClick = { destination ->
+                            navController.navigate(
+                                route = destination,
+                            )
+                        }
+                    )
             }
         }
     ) {
@@ -107,6 +129,12 @@ fun NavCookApp(
                         AnimatedContentTransitionScope.SlideDirection.Right,
                         animationSpec = tween(700)
                     )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(700)
+                    )
                 }
             ) {
                 Homepage(
@@ -131,7 +159,16 @@ fun NavCookApp(
                     )
                 },
                 exitTransition = {
-                    ExitTransition.None
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(700)
+                    )
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(700)
+                    )
                 },
                 popExitTransition = {
                     slideOutOfContainer(
@@ -141,6 +178,40 @@ fun NavCookApp(
                 }
             ) {
                 SearchScreen(
+                    viewModel = navCookViewModel,
+                    onNavigateToSearchResult = {
+                        navController.navigate(NavCookScreen.SearchResult.name)
+                    }
+                )
+            }
+            composable(
+                route = NavCookScreen.SearchResult.name,
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(700)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(700)
+                    )
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(700)
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(700)
+                    )
+                }
+            ) {
+                SearchResultScreen(
                     viewModel = navCookViewModel
                 )
             }
