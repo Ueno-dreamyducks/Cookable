@@ -1,16 +1,15 @@
 package com.dreamyducks.navcook.ui
 
 import android.content.Context
-import android.graphics.BitmapFactory
 import android.speech.tts.TextToSpeech
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dreamyducks.navcook.R
+import com.dreamyducks.navcook.data.Recipe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +25,19 @@ class NavCookViewModel() : ViewModel() {
 
     var searchUiState: SearchUiState by mutableStateOf(SearchUiState.Loading)
         private set
+
+    private val _recipeUiState = MutableStateFlow<Recipe?>(/*null*/ Recipe(
+        id = 0,
+        title = "Pasta",
+        thumbNailImage = R.drawable.pasta,
+        ingredients = listOf<String>(
+            "Pasta",
+            "Tomato Paste",
+            "Meat Ball"
+        )
+    )
+    )
+    val recipeUiState: StateFlow<Recipe?> = _recipeUiState.asStateFlow()
 
     private var textToSpeech: TextToSpeech? = null
 
@@ -44,38 +56,56 @@ class NavCookViewModel() : ViewModel() {
                 searchUiState = SearchUiState.Success(
                     listOf<Recipe>(
                         Recipe(
-                            title = "Title of Recipe",
-                            thumbNailImage = BitmapFactory.decodeResource(
-                                context.resources,
-                                R.drawable.pasta
-                            ).asImageBitmap()
+                            id = 0,
+                            title = "Pasta",
+                            thumbNailImage = R.drawable.pasta,
+                            ingredients = listOf<String>(
+                                "Pasta",
+                                "Tomato Paste",
+                                "Meat Ball"
+                            )
                         ),
                         Recipe(
+                            id = 1,
                             title = "Title of Recipe",
-                            thumbNailImage = BitmapFactory.decodeResource(
-                                context.resources,
-                                R.drawable.pasta
-                            ).asImageBitmap()
+                            thumbNailImage = R.drawable.pasta,
                         ),
                         Recipe(
+                            id = 2,
                             title = "Title of Recipe",
-                            thumbNailImage = BitmapFactory.decodeResource(
-                                context.resources,
-                                R.drawable.pasta
-                            ).asImageBitmap()
+                            thumbNailImage = R.drawable.pasta,
                         ),
                         Recipe(
+                            id = 3,
                             title = "Title of Recipe 2",
-                            thumbNailImage = BitmapFactory.decodeResource(
-                                context.resources,
-                                R.drawable.soup
-                            ).asImageBitmap()
+                            thumbNailImage = R.drawable.pasta
                         )
                     )
 
                 )
             }
         }
+    }
+
+    fun onGetRecipeDetail(
+        id: Int,
+        context: Context,
+    ) {
+        _recipeUiState.value = null //reset selected recipe
+        //Create database access to search id
+
+Log.d("MainActivity", "Selected recipe id: $id")
+
+        _recipeUiState.value = Recipe(
+            id = 0,
+            title = "Pasta",
+            thumbNailImage = R.drawable.pasta,
+            ingredients = listOf<String>(
+                "Pasta",
+                "Tomato Paste",
+                "Meat Ball"
+            )
+        )
     }
 
     fun textToSpeech(context: Context) {
@@ -113,7 +143,3 @@ sealed interface SearchUiState {
     data class Success(val recipes: List<Recipe>) : SearchUiState
 }
 
-data class Recipe(
-    val title: String,
-    val thumbNailImage: ImageBitmap
-)

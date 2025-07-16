@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -38,6 +39,7 @@ import com.dreamyducks.navcook.ui.theme.NavCookTheme
 
 @Composable
 fun Homepage(
+    innerPadding: PaddingValues,
     modifier: Modifier = Modifier,
     viewModel: NavCookViewModel = viewModel(),
     navigateToOverview: () -> Unit,
@@ -48,6 +50,7 @@ fun Homepage(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .padding(innerPadding)
             .padding(dimensionResource(R.dimen.padding_medium))
     ) {
         Column(
@@ -189,6 +192,7 @@ fun HomepageBottomBarPreview() {
 fun HomepagePreview() {
     NavCookTheme {
         Homepage(
+            innerPadding = PaddingValues(0.dp),
             navigateToOverview = {},
             navigateToSearch = {}
         )

@@ -1,9 +1,11 @@
 package com.dreamyducks.navcook.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,7 +35,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,23 +45,35 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
+import com.dreamyducks.navcook.data.Recipe
 import com.dreamyducks.navcook.format.nonScaledSp
 
 @Composable
 fun SearchResultScreen(
+    innerPadding: PaddingValues,
     viewModel: NavCookViewModel = viewModel(),
+    navigateToRecipeOverview: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val searchUiState = viewModel.searchUiState
+    val context = LocalContext.current
 
     Box(
         modifier = modifier
             .padding(dimensionResource(R.dimen.padding_medium))
+            .padding(innerPadding)
             .fillMaxSize()
     ) {
         when (searchUiState) {
             is SearchUiState.Loading -> Loading()
-            is SearchUiState.Success -> Success(recipes = listOf<Recipe>())
+            is SearchUiState.Success -> Success(
+                recipes = searchUiState.recipes,
+                onRecipeClick = { recipeId ->
+                    viewModel.onGetRecipeDetail(id = recipeId, context = context)
+                    navigateToRecipeOverview()
+                }
+            )
+
             is SearchUiState.Error -> Error()
         }
     }
@@ -88,9 +104,10 @@ private fun Loading(
 @Composable
 private fun Success(
     recipes: List<Recipe>,
+    onRecipeClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if(recipes.isNotEmpty()) {
+    if (recipes.isNotEmpty()) {
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
         ) {
@@ -98,7 +115,8 @@ private fun Success(
                 RecipeItem(
                     isFirstItem = index == 0,
                     isLastItem = index == recipes.lastIndex,
-                    recipe = item
+                    recipe = item,
+                    onRecipeClick = onRecipeClick
                 )
             }
         }
@@ -135,6 +153,7 @@ private fun RecipeItem(
     isFirstItem: Boolean,
     isLastItem: Boolean,
     recipe: Recipe,
+    onRecipeClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -157,10 +176,15 @@ private fun RecipeItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
             modifier = modifier
+                .clickable(
+                    onClick = {
+                        onRecipeClick(recipe.id)
+                    }
+                )
                 .padding(dimensionResource(R.dimen.padding_small))
         ) {
             Image(
-                bitmap = recipe.thumbNailImage,
+                painter = painterResource(recipe.thumbNailImage),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = modifier
@@ -170,7 +194,8 @@ private fun RecipeItem(
             )
             Text(
                 text = recipe.title,
-                fontSize = 24.sp.nonScaledSp,
+                fontSize = 20.sp.nonScaledSp,
+                fontWeight = FontWeight.Bold,
                 modifier = modifier
                     .weight(4f)
             )
@@ -190,7 +215,10 @@ private fun Error(
 @Composable
 fun SearchResultPreview() {
     MaterialTheme {
-        SearchResultScreen()
+        SearchResultScreen(
+            innerPadding = PaddingValues(0.dp),
+            navigateToRecipeOverview = {}
+        )
     }
 }
 
@@ -215,7 +243,8 @@ fun SearchResultTopBar(
                 )
                 Text(
                     text = searchQuery,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1
                 )
             }
         },

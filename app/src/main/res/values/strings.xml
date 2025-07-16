@@ -21,4 +21,7 @@
     <string name="soup">Soup</string>
 
     <string name="no_recipe_found">No Recipe Found</string>
+
+    <string name="read_more">Read More</string>
+    <string name="ingredients">INGREDIENTS</string>
 </resources>

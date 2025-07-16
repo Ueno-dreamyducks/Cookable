@@ -3,9 +3,12 @@ package com.dreamyducks.navcook.ui
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,15 +65,25 @@ import com.dreamyducks.navcook.R
 
 @Composable
 fun SearchScreen(
+    innerPadding: PaddingValues,
     viewModel: NavCookViewModel = viewModel(),
     onNavigateToSearchResult: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expanded by rememberSaveable { mutableStateOf(false) }
+    val fieldFocus = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = modifier
             .fillMaxSize()
+            .padding(innerPadding)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) {
+                focusManager.clearFocus()
+            }
     ) {
         Column(
             modifier = modifier
@@ -79,7 +93,8 @@ fun SearchScreen(
                 viewModel = viewModel,
                 onSearch = {
                     onNavigateToSearchResult()
-                }
+                },
+                fieldFocus = fieldFocus
             )
             Row(
                 modifier = modifier
@@ -129,6 +144,7 @@ fun SearchScreen(
 fun SearchScreenPreview() {
     MaterialTheme {
         SearchScreen(
+            innerPadding = PaddingValues(0.dp),
             onNavigateToSearchResult = {}
         )
     }
@@ -138,15 +154,17 @@ fun SearchScreenPreview() {
 private fun SearchSection(
     viewModel: NavCookViewModel = viewModel(),
     onSearch: () -> Unit,
+    fieldFocus: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
     val searchQuery by viewModel.searchInput.collectAsState()
-
-    val focusRequester = remember { FocusRequester() }
-    val focusManager = LocalFocusManager.current
     var isFocused by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        fieldFocus.requestFocus()
+    }
 
     Card(
         modifier = modifier
@@ -175,7 +193,6 @@ private fun SearchSection(
             keyboardActions = KeyboardActions(
                 onSearch = {
                     onSearch()
-                    focusManager.clearFocus()
                     viewModel.onSearch(
                         context = context
                     )
@@ -186,7 +203,7 @@ private fun SearchSection(
             ),
             maxLines = 1,
             modifier = modifier
-                .focusRequester(focusRequester)
+                .focusRequester(fieldFocus)
                 .onFocusChanged { event ->
                     isFocused = event.isFocused
                 }
@@ -227,6 +244,7 @@ private fun SearchSection(
 fun SearchSectionPreview() {
     MaterialTheme {
         SearchSection(
+            fieldFocus = FocusRequester(),
             onSearch = {}
         )
     }

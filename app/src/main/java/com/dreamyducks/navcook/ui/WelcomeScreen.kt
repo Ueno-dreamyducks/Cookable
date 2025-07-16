@@ -7,6 +7,7 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -43,6 +44,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun WelcomeScreen(
+    innerPadding: PaddingValues,
     onNavigateToHomepage: () -> Unit, modifier: Modifier = Modifier
 ) {
     val density = LocalDensity.current
@@ -60,6 +62,7 @@ fun WelcomeScreen(
     Box(
         modifier
             .fillMaxSize()
+            .padding(innerPadding)
     ) {
         Column(
             modifier = modifier.padding(horizontal = dimensionResource(R.dimen.padding_medium))
@@ -140,6 +143,9 @@ fun WelcomeScreen(
 @Composable
 fun WelcomeScreenPreview() {
     NavCookTheme {
-        WelcomeScreen({})
+        WelcomeScreen(
+            PaddingValues(0.dp),
+            {}
+        )
     }
 }

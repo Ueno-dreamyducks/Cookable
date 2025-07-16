@@ -5,7 +5,6 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -95,16 +94,16 @@ fun NavCookApp(
                     )
             }
         }
-    ) {
+    ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = startDestination,
             modifier = modifier
                 .fillMaxSize()
-                .padding(it)
         ) {
             composable(route = NavCookScreen.Welcome.name) {
                 WelcomeScreen(
+                    innerPadding = innerPadding,
                     onNavigateToHomepage = {
                         navController.navigate(NavCookScreen.Homepage.name)
                     }
@@ -138,6 +137,7 @@ fun NavCookApp(
                 }
             ) {
                 Homepage(
+                    innerPadding = innerPadding,
                     viewModel = navCookViewModel,
                     navigateToOverview = {
                         navController.navigate(NavCookScreen.RecipeOverview.name)
@@ -148,7 +148,10 @@ fun NavCookApp(
                 )
             }
             composable(route = NavCookScreen.RecipeOverview.name) {
-                RecipeOverviewScreen()
+                RecipeOverviewScreen(
+                    viewModel = navCookViewModel,
+                    innerPadding = innerPadding
+                )
             }
             composable(
                 route = NavCookScreen.Search.name,
@@ -178,6 +181,7 @@ fun NavCookApp(
                 }
             ) {
                 SearchScreen(
+                    innerPadding = innerPadding,
                     viewModel = navCookViewModel,
                     onNavigateToSearchResult = {
                         navController.navigate(NavCookScreen.SearchResult.name)
@@ -212,7 +216,11 @@ fun NavCookApp(
                 }
             ) {
                 SearchResultScreen(
-                    viewModel = navCookViewModel
+                    innerPadding = innerPadding,
+                    viewModel = navCookViewModel,
+                    navigateToRecipeOverview = {
+                        navController.navigate(NavCookScreen.RecipeOverview.name)
+                    }
                 )
             }
         }
