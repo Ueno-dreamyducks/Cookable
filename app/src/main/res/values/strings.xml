@@ -7,6 +7,7 @@
     <string name="title_recipe_overview">Recipe Overview</string>
     <string name="title_search">Search</string>
     <string name="title_search_result">Search Result</string>
+    <string name="title_recipe_viewer">Recipe View</string>
 
     <string name="hello">Hello %s</string>
     <string name="search_recipe">Search Recipe</string>
@@ -23,5 +24,6 @@
     <string name="no_recipe_found">No Recipe Found</string>
 
     <string name="read_more">Read More</string>
+    <string name="show_less">Show Less</string>
     <string name="ingredients">INGREDIENTS</string>
 </resources>

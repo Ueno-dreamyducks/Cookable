@@ -24,6 +24,7 @@ import com.dreamyducks.navcook.ui.Homepage
 import com.dreamyducks.navcook.ui.HomepageBottomAppBar
 import com.dreamyducks.navcook.ui.NavCookViewModel
 import com.dreamyducks.navcook.ui.RecipeOverviewScreen
+import com.dreamyducks.navcook.ui.RecipeViewer
 import com.dreamyducks.navcook.ui.SearchResultScreen
 import com.dreamyducks.navcook.ui.SearchResultTopBar
 import com.dreamyducks.navcook.ui.SearchScreen
@@ -36,7 +37,8 @@ enum class NavCookScreen(@StringRes val title: Int) {
     Homepage(title = R.string.title_homepage),
     RecipeOverview(title = R.string.title_recipe_overview),
     Search(title = R.string.title_search),
-    SearchResult(title = R.string.title_search_result)
+    SearchResult(title = R.string.title_search_result),
+    RecipeViewer(title = R.string.title_recipe_viewer)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -221,6 +223,38 @@ fun NavCookApp(
                     navigateToRecipeOverview = {
                         navController.navigate(NavCookScreen.RecipeOverview.name)
                     }
+                )
+            }
+            composable(
+                route = NavCookScreen.RecipeViewer.name,
+                enterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(700)
+                    )
+                },
+                exitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Left,
+                        animationSpec = tween(700)
+                    )
+                },
+                popEnterTransition = {
+                    slideIntoContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(700)
+                    )
+                },
+                popExitTransition = {
+                    slideOutOfContainer(
+                        AnimatedContentTransitionScope.SlideDirection.Right,
+                        animationSpec = tween(700)
+                    )
+                }
+            ) {
+                RecipeViewer(
+                    viewModel = navCookViewModel,
+                    innerPadding = innerPadding
                 )
             }
         }
