@@ -68,6 +68,7 @@ import com.dreamyducks.navcook.format.nonScaledSp
 fun RecipeOverviewScreen(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
+    onStartClick: () -> Unit,
     viewModel: NavCookViewModel = NavCookViewModel()
 ) {
     val recipe = viewModel.recipeUiState.collectAsState()
@@ -104,6 +105,7 @@ fun RecipeOverviewScreen(
             controlHeight = { px ->
                 controlHeight = with(density) { px.toDp() + 8.dp }
             },
+            onStartClick = onStartClick,
             isBigImage = isBigThumbnail,
             innerPadding = innerPadding,
             modifier = modifier
@@ -137,6 +139,7 @@ fun RecipeOverviewScreen(
 private fun OverlayControl(
     controlHeight: (Int) -> Unit,
     isBigImage: Boolean,
+    onStartClick: () -> Unit,
     innerPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {
@@ -176,7 +179,7 @@ private fun OverlayControl(
                 },
         ) {
             Button(
-                onClick = {},
+                onClick = onStartClick,
                 shape = RoundedCornerShape(dimensionResource(R.dimen.padding_small)),
                 modifier = modifier
                     .weight(3f)
@@ -352,7 +355,8 @@ private fun IngredientWithCheckbox(
 fun RecipeOverviewScreenPreview() {
     MaterialTheme {
         RecipeOverviewScreen(
-            innerPadding = PaddingValues(0.dp)
+            innerPadding = PaddingValues(0.dp),
+            onStartClick = {}
         )
     }
 }

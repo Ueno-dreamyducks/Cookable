@@ -152,7 +152,10 @@ fun NavCookApp(
             composable(route = NavCookScreen.RecipeOverview.name) {
                 RecipeOverviewScreen(
                     viewModel = navCookViewModel,
-                    innerPadding = innerPadding
+                    innerPadding = innerPadding,
+                    onStartClick = {
+                        navController.navigate(NavCookScreen.RecipeViewer.name)
+                    }
                 )
             }
             composable(
