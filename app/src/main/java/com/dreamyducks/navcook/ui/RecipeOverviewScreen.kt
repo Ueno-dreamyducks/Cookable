@@ -313,6 +313,8 @@ private fun Ingredients(
 ) {
     Text(
         text = stringResource(R.string.ingredients),
+        fontSize = 28.sp.nonScaledSp,
+
         style = MaterialTheme.typography.titleLarge
     )
 

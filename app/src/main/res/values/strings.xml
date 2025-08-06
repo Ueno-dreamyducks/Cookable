@@ -23,7 +23,17 @@
 
     <string name="no_recipe_found">No Recipe Found</string>
 
+    <string name="start">START</string>
     <string name="read_more">Read More</string>
     <string name="show_less">Show Less</string>
     <string name="ingredients">INGREDIENTS</string>
+
+    <string name="play_audio_description">Play audio description</string>
+    <string name="you_need">You Need:</string>
+    <string name="description">Description:</string>
+    <string name="menu">Menu</string>
+    <string name="quit">Quit</string>
+    <string name="exit_recipe">Exit Recipe?</string>
+    <string name="cancel">Cancel</string>
+    <string name="exit">Exit</string>
 </resources>

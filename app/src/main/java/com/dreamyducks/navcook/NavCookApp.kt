@@ -257,7 +257,10 @@ fun NavCookApp(
             ) {
                 RecipeViewer(
                     viewModel = navCookViewModel,
-                    innerPadding = innerPadding
+                    innerPadding = innerPadding,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
                 )
             }
         }
