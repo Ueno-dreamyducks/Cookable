@@ -94,7 +94,7 @@ class NavCookViewModel() : ViewModel() {
         _recipeUiState.value = null //reset selected recipe
         //Create database access to search id
 
-Log.d("MainActivity", "Selected recipe id: $id")
+        Log.d("MainActivity", "Selected recipe id: $id")
 
         _recipeUiState.value = Recipe(
             id = 0,
@@ -108,7 +108,11 @@ Log.d("MainActivity", "Selected recipe id: $id")
         )
     }
 
-    fun textToSpeech(context: Context) {
+    fun textToSpeech(
+        context: Context,
+        text: String = "Text to speech",
+        volume: Float = 0.0f
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             textToSpeech = TextToSpeech(
                 context
@@ -116,9 +120,9 @@ Log.d("MainActivity", "Selected recipe id: $id")
                 if (it == TextToSpeech.SUCCESS) {
                     textToSpeech?.let { txtToSpeech ->
                         txtToSpeech.language = Locale.US
-                        txtToSpeech.setSpeechRate(0.8f)
+                        txtToSpeech.setSpeechRate(volume)
                         txtToSpeech.speak(
-                            "Preheat oven to 350 degrees Fahrenheit. Spray a 8x8 baking dish with baking spray.",
+                            text,
                             TextToSpeech.QUEUE_ADD,
                             null,
                             null

@@ -32,6 +32,7 @@
     <string name="you_need">You Need:</string>
     <string name="description">Description:</string>
     <string name="menu">Menu</string>
+    <string name="mute_audio">Mute Audio</string>
     <string name="quit">Quit</string>
     <string name="exit_recipe">Exit Recipe?</string>
     <string name="cancel">Cancel</string>

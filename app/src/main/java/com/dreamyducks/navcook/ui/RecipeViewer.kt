@@ -42,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -57,6 +58,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
@@ -76,6 +78,7 @@ import com.dreamyducks.navcook.data.Step
 import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 import kotlinx.coroutines.delay
+
 
 @Composable
 fun RecipeViewer(
@@ -115,10 +118,14 @@ fun RecipeViewer(
         )
 
     )//viewModel.recipeUiState.collectAsState()
+
+    val context = LocalContext.current
     var showExitDialog by remember { mutableStateOf(false) }
     var currentStepIndex by remember { mutableIntStateOf(0) }
     var currentStep by remember { mutableStateOf(recipeUiState.steps!![currentStepIndex]) }
+    var audioScript by remember { mutableStateOf("") }
     var isChangingStep by remember { mutableStateOf(false) }
+    var isMute by remember { mutableStateOf(false) }
 
     var overlayHeight by remember { mutableStateOf(0.dp) }
 
@@ -131,6 +138,9 @@ fun RecipeViewer(
         delay(100)
         currentStep = recipeUiState.steps!![currentStepIndex]
         isChangingStep = false
+
+        audioScript = currentStep.title //Build audio script
+        viewModel.textToSpeech(context = context, text = audioScript, volume = if(isMute) 0.0f else 0.8f)
     }
 
     Box(
@@ -170,6 +180,7 @@ fun RecipeViewer(
             micState = {
                 Log.d("MainActivity", "is microphone active: $it")
             },
+            onMuteCheckChange = { isMute = it },
             onNavigateBack = onNavigateBack
         )
 
@@ -228,7 +239,9 @@ fun RecipeViewer(
                             .weight(1f, fill = false)
                     )
                     IconButton(
-                        onClick = {}
+                        onClick = {
+                            viewModel.textToSpeech(context = context, text = audioScript, volume = if(isMute) 0.0f else 0.8f)
+                        }
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Outlined.VolumeUp,
@@ -276,9 +289,11 @@ private fun OverlayControl(
     onStepBack: () -> Unit,
     onStepForward: () -> Unit,
     micState: (Boolean) -> Unit,
+    onMuteCheckChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     var isMicActive by remember { mutableStateOf(false) }
+    var isMute by remember { mutableStateOf(false) }
 
     val micColor by animateColorAsState(
         targetValue = if (isMicActive) MaterialTheme.colorScheme.onPrimary else LocalContentColor.current,
@@ -296,6 +311,10 @@ private fun OverlayControl(
 
     val density = LocalDensity.current
     var controlHeight by remember { mutableStateOf(0.dp) }
+
+    LaunchedEffect(isMute) {
+        onMuteCheckChange(isMute)
+    }
 
     Box(
         modifier
@@ -391,6 +410,23 @@ private fun OverlayControl(
                                     text = stringResource(R.string.menu),
                                     fontWeight = FontWeight.Bold
                                 )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = modifier
+                                        .fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.mute_audio)
+                                    )
+                                    Switch(
+                                        checked = isMute,
+                                        onCheckedChange = {
+                                            Log.d("MainActivity", "new value: $it")
+                                            isMute = it
+                                        }
+                                    )
+                                }
                                 TextButton(
                                     onClick = onNavigateBack,
                                     modifier = modifier
