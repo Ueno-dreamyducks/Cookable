@@ -1,37 +1,35 @@
-package com.dreamyducks.navcook.ui
+package com.dreamyducks.navcook.ui.recipeViewer
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
-import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dreamyducks.navcook.R
-import com.dreamyducks.navcook.data.Recipe
 import com.dreamyducks.navcook.data.RecipeRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-class NavCookViewModel(private val recipeRepository: RecipeRepository) : ViewModel() {
-    private val _searchInput = MutableStateFlow("")
-    val searchInput: StateFlow<String> = _searchInput.asStateFlow()
+class ViewerViewModel(private val recipeRepository: RecipeRepository): ViewModel() {
+    private val _viewerUiState = MutableStateFlow(ViewerUiState())
+    val viewerUiState : StateFlow<ViewerUiState> = _viewerUiState.asStateFlow()
 
-    fun updateSearch(newValue: String) {
-        _searchInput.value = newValue
+    fun updateViewerUiState(newState: ViewerUiState) {
+        _viewerUiState.value = newState
+    }
+
+    fun updateUiStateIndex(changeAmount: Int) {
+        _viewerUiState.value = viewerUiState.value.copy(
+            currentIndex = viewerUiState.value.currentIndex + changeAmount
+        )
     }
 
     private var textToSpeech: TextToSpeech? = null
     fun textToSpeech(
         context: Context,
         text: String = "Text to speech",
-        volume: Float = 0.0f
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             textToSpeech = TextToSpeech(
@@ -40,7 +38,7 @@ class NavCookViewModel(private val recipeRepository: RecipeRepository) : ViewMod
                 if (it == TextToSpeech.SUCCESS) {
                     textToSpeech?.let { txtToSpeech ->
                         txtToSpeech.language = Locale.US
-                        txtToSpeech.setSpeechRate(volume)
+                        txtToSpeech.setSpeechRate(0.8f)
                         txtToSpeech.speak(
                             text,
                             TextToSpeech.QUEUE_ADD,
@@ -61,3 +59,11 @@ class NavCookViewModel(private val recipeRepository: RecipeRepository) : ViewMod
     }
 }
 
+data class ViewerUiState(
+    val currentIndex: Int = 0,
+    val size: Int = 0,
+    val audioScript: String = "",
+    val isReadAround: Boolean = false,
+    val isMicOn: Boolean = true,
+
+)

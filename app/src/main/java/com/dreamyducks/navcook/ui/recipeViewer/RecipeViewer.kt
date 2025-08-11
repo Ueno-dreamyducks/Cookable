@@ -1,6 +1,5 @@
-package com.dreamyducks.navcook.ui
+package com.dreamyducks.navcook.ui.recipeViewer
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -33,7 +32,6 @@ import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.filled.Flatware
 import androidx.compose.material.icons.outlined.CameraAlt
-import androidx.compose.material.icons.outlined.Flatware
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.Card
@@ -47,8 +45,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -72,10 +70,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.data.Recipe
+import com.dreamyducks.navcook.data.RecipeRepository
 import com.dreamyducks.navcook.data.Step
 import com.dreamyducks.navcook.format.nonScaledSp
+import com.dreamyducks.navcook.ui.ViewModelFactory
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 import kotlinx.coroutines.delay
 
@@ -83,7 +84,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun RecipeViewer(
     modifier: Modifier = Modifier,
-    viewModel: NavCookViewModel = NavCookViewModel(),
+    viewModel: ViewerViewModel = viewModel(factory = ViewModelFactory(RecipeRepository)),
     innerPadding: PaddingValues,
     onNavigateBack: () -> Unit
 ) {
@@ -120,12 +121,13 @@ fun RecipeViewer(
     )//viewModel.recipeUiState.collectAsState()
 
     val context = LocalContext.current
+
+    val viewerUiState = viewModel.viewerUiState.collectAsState()
+
     var showExitDialog by remember { mutableStateOf(false) }
-    var currentStepIndex by remember { mutableIntStateOf(0) }
-    var currentStep by remember { mutableStateOf(recipeUiState.steps!![currentStepIndex]) }
+    var currentStep by remember { mutableStateOf(recipeUiState.steps!![viewerUiState.value.currentIndex]) }
     var audioScript by remember { mutableStateOf("") }
     var isChangingStep by remember { mutableStateOf(false) }
-    var isMute by remember { mutableStateOf(false) }
 
     var overlayHeight by remember { mutableStateOf(0.dp) }
 
@@ -133,14 +135,22 @@ fun RecipeViewer(
         showExitDialog = true
     }
 
-    LaunchedEffect(currentStepIndex) {
+    LaunchedEffect(Unit) {
+        viewModel.updateViewerUiState(
+            viewerUiState.value.copy(
+                size = recipeUiState.steps!!.size - 1
+            )
+        )
+    }
+
+    LaunchedEffect(viewerUiState.value.currentIndex) {
         isChangingStep = true
         delay(100)
-        currentStep = recipeUiState.steps!![currentStepIndex]
+        currentStep = recipeUiState.steps!![viewerUiState.value.currentIndex]
         isChangingStep = false
 
         audioScript = currentStep.title //Build audio script
-        viewModel.textToSpeech(context = context, text = audioScript, volume = if(isMute) 0.0f else 0.8f)
+        viewModel.textToSpeech(context = context, text = audioScript)
     }
 
     Box(
@@ -160,28 +170,12 @@ fun RecipeViewer(
         }
         OverlayControl(  //Control on bottom of screen
             innerPadding = innerPadding,
-            stepSize = recipeUiState.steps!!.size - 1,
-            currentIndex = currentStepIndex,
             isChangingStep = isChangingStep,
             overlayHeight = { dp ->
                 overlayHeight = dp
             },
-            onStepBack = {
-                if (currentStepIndex > 0) {
-                    currentStepIndex -= 1
-                }
-            },
-            onStepForward = {
-                if (currentStepIndex < recipeUiState.steps.size - 1) {
-                    currentStepIndex += 1
-                }
-                Log.d("MainActivity", "current index num. : $currentStepIndex")
-            },
-            micState = {
-                Log.d("MainActivity", "is microphone active: $it")
-            },
-            onMuteCheckChange = { isMute = it },
-            onNavigateBack = onNavigateBack
+            viewModel = viewModel,
+            onShowExitDialog = { showExitDialog = true }
         )
 
         Column( //Viewer contents
@@ -240,7 +234,7 @@ fun RecipeViewer(
                     )
                     IconButton(
                         onClick = {
-                            viewModel.textToSpeech(context = context, text = audioScript, volume = if(isMute) 0.0f else 0.8f)
+                            viewModel.textToSpeech(context = context, text = audioScript)
                         }
                     ) {
                         Icon(
@@ -282,21 +276,15 @@ fun RecipeViewer(
 private fun OverlayControl(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
-    stepSize: Int,
-    currentIndex: Int,
+    viewModel: ViewerViewModel,
     isChangingStep: Boolean,
     overlayHeight: (Dp) -> Unit,
-    onStepBack: () -> Unit,
-    onStepForward: () -> Unit,
-    micState: (Boolean) -> Unit,
-    onMuteCheckChange: (Boolean) -> Unit,
-    onNavigateBack: () -> Unit,
+    onShowExitDialog: () -> Unit,
 ) {
-    var isMicActive by remember { mutableStateOf(false) }
-    var isMute by remember { mutableStateOf(false) }
+    val viewerUiState = viewModel.viewerUiState.collectAsState()
 
     val micColor by animateColorAsState(
-        targetValue = if (isMicActive) MaterialTheme.colorScheme.onPrimary else LocalContentColor.current,
+        targetValue = if (viewerUiState.value.isMicOn) MaterialTheme.colorScheme.onPrimary else LocalContentColor.current,
         animationSpec = tween(1000),
         label = "Mic background color animate"
     )
@@ -311,10 +299,6 @@ private fun OverlayControl(
 
     val density = LocalDensity.current
     var controlHeight by remember { mutableStateOf(0.dp) }
-
-    LaunchedEffect(isMute) {
-        onMuteCheckChange(isMute)
-    }
 
     Box(
         modifier
@@ -373,8 +357,12 @@ private fun OverlayControl(
                     .padding(vertical = dimensionResource(R.dimen.padding_small))
             ) {
                 IconButton(
-                    enabled = currentIndex != 0,
-                    onClick = onStepBack
+                    enabled = viewerUiState.value.currentIndex != 0,
+                    onClick = {
+                        if (viewerUiState.value.currentIndex > 0) {
+                            viewModel.updateUiStateIndex(-1)
+                        }
+                    }
                 ) {
                     Icon(Icons.AutoMirrored.Default.ArrowBack, null)
                 }
@@ -385,12 +373,15 @@ private fun OverlayControl(
                 }
                 IconButton(
                     onClick = {
-                        isMicActive = !isMicActive
-                        micState(isMicActive)
+                        viewModel.updateViewerUiState(
+                            viewerUiState.value.copy(
+                                isMicOn = !viewerUiState.value.isMicOn
+                            )
+                        )
                     },
                     modifier = modifier
                         .clip(RoundedCornerShape(50.dp))
-                        .background(if (isMicActive) MaterialTheme.colorScheme.primary else Color.Transparent)
+                        .background(if (viewerUiState.value.isMicOn) MaterialTheme.colorScheme.primary else Color.Transparent)
                 ) {
                     Icon(
                         Icons.Outlined.Mic,
@@ -420,15 +411,18 @@ private fun OverlayControl(
                                         text = stringResource(R.string.mute_audio)
                                     )
                                     Switch(
-                                        checked = isMute,
+                                        checked = viewerUiState.value.isReadAround,
                                         onCheckedChange = {
-                                            Log.d("MainActivity", "new value: $it")
-                                            isMute = it
+                                            viewModel.updateViewerUiState(
+                                                viewerUiState.value.copy(
+                                                    isReadAround = !viewerUiState.value.isReadAround
+                                                )
+                                            )
                                         }
                                     )
                                 }
                                 TextButton(
-                                    onClick = onNavigateBack,
+                                    onClick = onShowExitDialog,
                                     modifier = modifier
                                         .fillMaxWidth()
                                 ) {
@@ -447,8 +441,12 @@ private fun OverlayControl(
 
 
                 IconButton(
-                    onClick = onStepForward,
-                    enabled = currentIndex < stepSize
+                    onClick = {
+                        if (viewerUiState.value.currentIndex < viewerUiState.value.size) {
+                            viewModel.updateUiStateIndex(1)
+                        }
+                    },
+                    enabled = viewerUiState.value.currentIndex < viewerUiState.value.size
                 ) {
                     Icon(Icons.AutoMirrored.Default.ArrowForward, null)
                 }
@@ -534,6 +532,13 @@ private fun ExitDialog(
         }
     }
 }
+
+data class RecipeViewer(
+    val recipe: Recipe,
+    val currentIndex: Int,
+    val isMicOn: Boolean,
+    val isReadAloud: Boolean
+)
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

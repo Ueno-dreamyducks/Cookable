@@ -1,4 +1,4 @@
-package com.dreamyducks.navcook.ui
+package com.dreamyducks.navcook.ui.homepage
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
@@ -33,15 +34,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
+import com.dreamyducks.navcook.data.RecipeRepository
 import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
+import com.dreamyducks.navcook.ui.NavCookViewModel
+import com.dreamyducks.navcook.ui.ViewModelFactory
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Homepage(
     innerPadding: PaddingValues,
     modifier: Modifier = Modifier,
-    viewModel: NavCookViewModel = viewModel(),
+    viewModel: NavCookViewModel = viewModel(factory = ViewModelFactory(RecipeRepository)),
     navigateToOverview: () -> Unit,
     navigateToSearch: () -> Unit,
 ) {
@@ -50,8 +55,8 @@ fun Homepage(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(innerPadding)
             .padding(dimensionResource(R.dimen.padding_medium))
+            .padding(innerPadding)
     ) {
         Column(
             verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),

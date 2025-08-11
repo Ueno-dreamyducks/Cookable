@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package com.dreamyducks.navcook.ui
+package com.dreamyducks.navcook.ui.recipeOverview
 
 import android.util.Log
 import androidx.compose.animation.animateContentSize
@@ -60,20 +60,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.data.Recipe
+import com.dreamyducks.navcook.data.RecipeRepository
 import com.dreamyducks.navcook.format.nonScaledSp
+import com.dreamyducks.navcook.ui.NavCookViewModel
+import com.dreamyducks.navcook.ui.ViewModelFactory
 
 @Composable
 fun RecipeOverviewScreen(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
     onStartClick: () -> Unit,
-    viewModel: NavCookViewModel = NavCookViewModel()
+    overviewViewModel: OverviewViewModel = viewModel(factory = ViewModelFactory(RecipeRepository))
 ) {
-    val recipe = viewModel.recipeUiState.collectAsState()
-
     val density = LocalDensity.current
+    val recipe = overviewViewModel.recipe.collectAsState()
     //val statusBarHeight = with(density) { WindowInsets.statusBars.getTop(density).toDp() }
 
     var imagePixelHeight by remember { mutableIntStateOf(0) }

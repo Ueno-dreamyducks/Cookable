@@ -1,4 +1,4 @@
-package com.dreamyducks.navcook.ui
+package com.dreamyducks.navcook.ui.search
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateContentSize
@@ -38,7 +38,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,37 +62,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
+import com.dreamyducks.navcook.data.RecipeRepository
+import com.dreamyducks.navcook.ui.ViewModelFactory
+import kotlinx.coroutines.launch
 
 @Composable
 fun SearchScreen(
     innerPadding: PaddingValues,
-    viewModel: NavCookViewModel = viewModel(),
+    searchViewModel: SearchViewModel = viewModel(factory = ViewModelFactory(RecipeRepository)),
     onNavigateToSearchResult: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by rememberSaveable { mutableStateOf(false) }
     val fieldFocus = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(innerPadding)
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
             ) {
                 focusManager.clearFocus()
             }
+            .padding(innerPadding)
     ) {
         Column(
             modifier = modifier
                 .padding(dimensionResource(R.dimen.padding_medium))
         ) {
             SearchSection(
-                viewModel = viewModel,
+                searchViewModel = searchViewModel,
                 onSearch = {
-                    onNavigateToSearchResult()
+                    coroutineScope.launch {
+                        onNavigateToSearchResult()
+                    }
                 },
                 fieldFocus = fieldFocus
             )
@@ -145,19 +150,20 @@ fun SearchScreenPreview() {
     MaterialTheme {
         SearchScreen(
             innerPadding = PaddingValues(0.dp),
-            onNavigateToSearchResult = {}
+            onNavigateToSearchResult = {},
         )
     }
 }
 
 @Composable
 private fun SearchSection(
-    viewModel: NavCookViewModel = viewModel(),
+    searchViewModel: SearchViewModel = viewModel(),
     onSearch: () -> Unit,
     fieldFocus: FocusRequester,
     modifier: Modifier = Modifier,
 ) {
-    val searchQuery by viewModel.searchInput.collectAsState()
+    val searchQuery = searchViewModel.searchQuery.collectAsState()
+
     var isFocused by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -177,10 +183,8 @@ private fun SearchSection(
         shape = RoundedCornerShape(if (isFocused) 20.dp else 50.dp)
     ) {
         TextField(
-            value = searchQuery,
-            onValueChange = { newStr ->
-                viewModel.updateSearch(newStr)
-            },
+            value = searchQuery.value,
+            onValueChange = searchViewModel::updateSearchQuery,
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Outlined.Search,
@@ -193,9 +197,6 @@ private fun SearchSection(
             keyboardActions = KeyboardActions(
                 onSearch = {
                     onSearch()
-                    viewModel.onSearch(
-                        context = context
-                    )
                 }
             ),
             keyboardOptions = KeyboardOptions(

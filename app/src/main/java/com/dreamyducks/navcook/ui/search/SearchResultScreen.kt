@@ -1,4 +1,4 @@
-package com.dreamyducks.navcook.ui
+package com.dreamyducks.navcook.ui.search
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -29,52 +29,79 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.data.Recipe
+import com.dreamyducks.navcook.data.RecipeRepository
 import com.dreamyducks.navcook.format.nonScaledSp
+import com.dreamyducks.navcook.ui.ViewModelFactory
 
 @Composable
 fun SearchResultScreen(
     innerPadding: PaddingValues,
-    viewModel: NavCookViewModel = viewModel(),
+    searchViewModel: SearchViewModel = viewModel(factory = ViewModelFactory(RecipeRepository)),
+    onNavigateBack: () -> Unit,
     navigateToRecipeOverview: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val searchUiState = viewModel.searchUiState
+    LaunchedEffect(Unit) {
+        searchViewModel.onSearch()
+    }
+    val searchUiState = searchViewModel.searchUiState
     val context = LocalContext.current
+
+    var topBarHeight by remember { mutableStateOf<Dp>(0.dp) }
 
     Box(
         modifier = modifier
-            .padding(dimensionResource(R.dimen.padding_medium))
-            .padding(innerPadding)
             .fillMaxSize()
     ) {
-        when (searchUiState) {
-            is SearchUiState.Loading -> Loading()
-            is SearchUiState.Success -> Success(
-                recipes = searchUiState.recipes,
-                onRecipeClick = { recipeId ->
-                    viewModel.onGetRecipeDetail(id = recipeId, context = context)
-                    navigateToRecipeOverview()
-                }
-            )
+        SearchResultTopBar(
+            searchViewModel = searchViewModel,
+            onNavigationBack = onNavigateBack,
+            height = {
+                topBarHeight = it
+            }
+        )
+        Box(
+            modifier = modifier
+                .padding(innerPadding)
+                .padding(top = topBarHeight)
+                .padding(dimensionResource(R.dimen.padding_medium))
+        ) {
+            when (searchUiState) {
+                is SearchUiState.Loading -> Loading()
+                is SearchUiState.Success -> Success(
+                    recipes = searchUiState.recipes,
+                    onRecipeClick = { recipeId ->
+                        searchViewModel.onGetRecipeDetail(id = recipeId)
+                        navigateToRecipeOverview()
+                    }
+                )
 
-            is SearchUiState.Error -> Error()
+                is SearchUiState.Error -> Error()
+            }
         }
     }
 }
@@ -217,7 +244,8 @@ fun SearchResultPreview() {
     MaterialTheme {
         SearchResultScreen(
             innerPadding = PaddingValues(0.dp),
-            navigateToRecipeOverview = {}
+            navigateToRecipeOverview = {},
+            onNavigateBack = {}
         )
     }
 }
@@ -225,11 +253,13 @@ fun SearchResultPreview() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchResultTopBar(
-    viewModel: NavCookViewModel = NavCookViewModel(),
+    searchViewModel: SearchViewModel = viewModel(),
     onNavigationBack: () -> Unit,
+    height: (Dp) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val searchQuery by viewModel.searchInput.collectAsState()
+    val searchQuery by searchViewModel.searchQuery.collectAsState()
+    val density = LocalDensity.current
 
     CenterAlignedTopAppBar(
         title = {
@@ -261,7 +291,12 @@ fun SearchResultTopBar(
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer,
             titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        )
+        ),
+        modifier = modifier
+            .onGloballyPositioned { coordinates ->
+                val heightPx = coordinates.size.height
+                height(with(density) { heightPx.toDp() })
+            }
     )
 }
 
@@ -270,7 +305,8 @@ fun SearchResultTopBar(
 fun SearchResultTopBarPreview() {
     MaterialTheme {
         SearchResultTopBar(
-            onNavigationBack = {}
+            onNavigationBack = {},
+            height = {}
         )
     }
 }
