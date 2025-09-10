@@ -34,11 +34,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
-import com.dreamyducks.navcook.data.RecipeRepository
 import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.ui.NavCookViewModel
-import com.dreamyducks.navcook.ui.ViewModelFactory
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,7 +44,7 @@ import com.dreamyducks.navcook.ui.theme.NavCookTheme
 fun Homepage(
     innerPadding: PaddingValues,
     modifier: Modifier = Modifier,
-    viewModel: NavCookViewModel = viewModel(factory = ViewModelFactory(RecipeRepository)),
+    viewModel: NavCookViewModel = viewModel(),
     navigateToOverview: () -> Unit,
     navigateToSearch: () -> Unit,
 ) {

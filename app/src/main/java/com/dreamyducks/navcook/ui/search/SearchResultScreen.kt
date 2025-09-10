@@ -1,6 +1,5 @@
 package com.dreamyducks.navcook.ui.search
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,16 +19,13 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,7 +39,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,26 +46,21 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
-import com.dreamyducks.navcook.data.Recipe
-import com.dreamyducks.navcook.data.RecipeRepository
 import com.dreamyducks.navcook.format.nonScaledSp
-import com.dreamyducks.navcook.ui.ViewModelFactory
+import com.dreamyducks.navcook.network.SearchResult
 
 @Composable
 fun SearchResultScreen(
+    modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
-    searchViewModel: SearchViewModel = viewModel(factory = ViewModelFactory(RecipeRepository)),
+    searchResultViewModel: SearchResultViewModel = viewModel(),
     onNavigateBack: () -> Unit,
     navigateToRecipeOverview: () -> Unit,
-    modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(Unit) {
-        searchViewModel.onSearch()
-    }
-    val searchUiState = searchViewModel.searchUiState
-    val context = LocalContext.current
-
+    val searchResult = searchResultViewModel.searchResult.collectAsState()
     var topBarHeight by remember { mutableStateOf<Dp>(0.dp) }
 
     Box(
@@ -78,7 +68,7 @@ fun SearchResultScreen(
             .fillMaxSize()
     ) {
         SearchResultTopBar(
-            searchViewModel = searchViewModel,
+            searchQuery = "[Search result]",//searchResult.value.searchQuery,
             onNavigationBack = onNavigateBack,
             height = {
                 topBarHeight = it
@@ -90,39 +80,12 @@ fun SearchResultScreen(
                 .padding(top = topBarHeight)
                 .padding(dimensionResource(R.dimen.padding_medium))
         ) {
-            when (searchUiState) {
-                is SearchUiState.Loading -> Loading()
-                is SearchUiState.Success -> Success(
-                    recipes = searchUiState.recipes,
-                    onRecipeClick = { recipeId ->
-                        searchViewModel.onGetRecipeDetail(id = recipeId)
-                        navigateToRecipeOverview()
-                    }
-                )
-
-                is SearchUiState.Error -> Error()
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
-@Composable
-private fun Loading(
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxSize()
-    ) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-        ) {
-            ContainedLoadingIndicator(
-                modifier = modifier
-                    .size(120.dp)
-                    .align(Alignment.Center)
+            Success(
+                recipes = searchResult.value,
+                onRecipeClick = { recipeId ->
+                    searchResultViewModel.onGetRecipeDetail(id = recipeId)
+                    navigateToRecipeOverview()
+                }
             )
         }
     }
@@ -130,7 +93,7 @@ private fun Loading(
 
 @Composable
 private fun Success(
-    recipes: List<Recipe>,
+    recipes: List<SearchResult>,
     onRecipeClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -179,7 +142,7 @@ private fun Success(
 private fun RecipeItem(
     isFirstItem: Boolean,
     isLastItem: Boolean,
-    recipe: Recipe,
+    recipe: SearchResult,
     onRecipeClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -210,8 +173,10 @@ private fun RecipeItem(
                 )
                 .padding(dimensionResource(R.dimen.padding_small))
         ) {
-            Image(
-                painter = painterResource(recipe.thumbNailImage),
+            AsyncImage(
+                model = ImageRequest.Builder(context = LocalContext.current)
+                    .data(recipe.thumbnail)
+                    .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = modifier
@@ -253,12 +218,11 @@ fun SearchResultPreview() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchResultTopBar(
-    searchViewModel: SearchViewModel = viewModel(),
+    searchQuery: String,
     onNavigationBack: () -> Unit,
     height: (Dp) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val searchQuery by searchViewModel.searchQuery.collectAsState()
     val density = LocalDensity.current
 
     CenterAlignedTopAppBar(
@@ -305,6 +269,7 @@ fun SearchResultTopBar(
 fun SearchResultTopBarPreview() {
     MaterialTheme {
         SearchResultTopBar(
+            searchQuery = "",
             onNavigationBack = {},
             height = {}
         )

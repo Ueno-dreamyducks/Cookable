@@ -63,17 +63,14 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.data.Recipe
-import com.dreamyducks.navcook.data.RecipeRepository
 import com.dreamyducks.navcook.format.nonScaledSp
-import com.dreamyducks.navcook.ui.NavCookViewModel
-import com.dreamyducks.navcook.ui.ViewModelFactory
 
 @Composable
 fun RecipeOverviewScreen(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
     onStartClick: () -> Unit,
-    overviewViewModel: OverviewViewModel = viewModel(factory = ViewModelFactory(RecipeRepository))
+    overviewViewModel: OverviewViewModel = viewModel()
 ) {
     val density = LocalDensity.current
     val recipe = overviewViewModel.recipe.collectAsState()

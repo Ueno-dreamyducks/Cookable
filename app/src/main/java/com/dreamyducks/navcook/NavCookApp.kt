@@ -20,9 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.dreamyducks.navcook.data.RecipeRepository
 import com.dreamyducks.navcook.ui.NavCookViewModel
-import com.dreamyducks.navcook.ui.ViewModelFactory
 import com.dreamyducks.navcook.ui.WelcomeScreen
 import com.dreamyducks.navcook.ui.homepage.Homepage
 import com.dreamyducks.navcook.ui.homepage.HomepageBottomAppBar
@@ -46,7 +44,7 @@ enum class NavCookScreen(@StringRes val title: Int) {
 @Composable
 fun NavCookApp(
     modifier: Modifier = Modifier,
-    navCookViewModel: NavCookViewModel = viewModel(factory = ViewModelFactory(RecipeRepository)),
+    navCookViewModel: NavCookViewModel = viewModel(),
     navController: NavHostController = rememberNavController(),
 ) {
     val context = LocalContext.current

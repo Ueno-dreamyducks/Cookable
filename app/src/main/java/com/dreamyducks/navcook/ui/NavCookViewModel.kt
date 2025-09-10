@@ -2,24 +2,16 @@ package com.dreamyducks.navcook.ui
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
-import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dreamyducks.navcook.R
-import com.dreamyducks.navcook.data.Recipe
-import com.dreamyducks.navcook.data.RecipeRepository
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-class NavCookViewModel(private val recipeRepository: RecipeRepository) : ViewModel() {
+class NavCookViewModel() : ViewModel() {
     private val _searchInput = MutableStateFlow("")
     val searchInput: StateFlow<String> = _searchInput.asStateFlow()
 

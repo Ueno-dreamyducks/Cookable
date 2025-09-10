@@ -73,10 +73,8 @@ import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.data.Recipe
-import com.dreamyducks.navcook.data.RecipeRepository
 import com.dreamyducks.navcook.data.Step
 import com.dreamyducks.navcook.format.nonScaledSp
-import com.dreamyducks.navcook.ui.ViewModelFactory
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 import kotlinx.coroutines.delay
 
@@ -84,7 +82,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun RecipeViewer(
     modifier: Modifier = Modifier,
-    viewModel: ViewerViewModel = viewModel(factory = ViewModelFactory(RecipeRepository)),
+    viewModel: ViewerViewModel = viewModel(),
     innerPadding: PaddingValues,
     onNavigateBack: () -> Unit
 ) {

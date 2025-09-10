@@ -4,7 +4,6 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dreamyducks.navcook.data.RecipeRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-class ViewerViewModel(private val recipeRepository: RecipeRepository): ViewModel() {
+class ViewerViewModel(): ViewModel() {
     private val _viewerUiState = MutableStateFlow(ViewerUiState())
     val viewerUiState : StateFlow<ViewerUiState> = _viewerUiState.asStateFlow()
 
