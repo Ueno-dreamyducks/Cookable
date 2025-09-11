@@ -9,7 +9,6 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dreamyducks.navcook.NavCookApplication
-import com.dreamyducks.navcook.data.Recipe
 import com.dreamyducks.navcook.data.RecipeManager
 import com.dreamyducks.navcook.data.SearchRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -111,7 +110,3 @@ sealed interface SearchUiState {
     object Success : SearchUiState
 }
 
-data class SearchResult_NOUSE(
-    val searchQuery: String = "",
-    val recipes: List<Recipe> = listOf()
-)

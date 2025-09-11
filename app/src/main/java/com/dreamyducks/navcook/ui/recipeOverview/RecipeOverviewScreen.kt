@@ -4,7 +4,6 @@ package com.dreamyducks.navcook.ui.recipeOverview
 
 import android.util.Log
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -48,11 +47,10 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,9 +59,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
-import com.dreamyducks.navcook.data.Recipe
 import com.dreamyducks.navcook.format.nonScaledSp
+import com.dreamyducks.navcook.network.Recipe
 
 @Composable
 fun RecipeOverviewScreen(
@@ -217,10 +217,11 @@ private fun BigPicture(
             .fillMaxWidth()
             .aspectRatio(1f)
     ) {
-        Image(
-            painter = painterResource(recipe!!.thumbNailImage),
+        AsyncImage(
+            model = ImageRequest.Builder(context = LocalContext.current)
+                .data(recipe!!.thumbnail)
+                .build(),
             contentDescription = null,
-            contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
@@ -238,7 +239,7 @@ private fun BigPicture(
                 .onGloballyPositioned { coordinates ->
                     //imagePixelHeight = coordinates.size.height
                     imagePixelHeight(coordinates.size.height)
-                },
+                }
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,

@@ -30,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,17 +52,19 @@ import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.network.SearchResult
+import kotlinx.coroutines.launch
 
 @Composable
 fun SearchResultScreen(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
-    searchResultViewModel: SearchResultViewModel = viewModel(),
+    searchResultViewModel: SearchResultViewModel = viewModel(factory = SearchResultViewModel.Factory),
     onNavigateBack: () -> Unit,
     navigateToRecipeOverview: () -> Unit,
 ) {
     val searchResult = searchResultViewModel.searchResult.collectAsState()
     var topBarHeight by remember { mutableStateOf<Dp>(0.dp) }
+    val coroutine = rememberCoroutineScope()
 
     Box(
         modifier = modifier
@@ -83,8 +86,10 @@ fun SearchResultScreen(
             Success(
                 recipes = searchResult.value,
                 onRecipeClick = { recipeId ->
-                    searchResultViewModel.onGetRecipeDetail(id = recipeId)
-                    navigateToRecipeOverview()
+                    coroutine.launch {
+                        searchResultViewModel.onGetRecipeDetail(id = recipeId)
+                        navigateToRecipeOverview()
+                    }
                 }
             )
         }

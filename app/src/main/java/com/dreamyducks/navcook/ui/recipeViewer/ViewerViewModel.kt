@@ -4,6 +4,8 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dreamyducks.navcook.data.RecipeManager
+import com.dreamyducks.navcook.network.Recipe
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +14,9 @@ import kotlinx.coroutines.launch
 import java.util.Locale
 
 class ViewerViewModel(): ViewModel() {
+    val recipeManager = RecipeManager
+
+    val recipe: StateFlow<Recipe?> = recipeManager.selectedRecipe
     private val _viewerUiState = MutableStateFlow(ViewerUiState())
     val viewerUiState : StateFlow<ViewerUiState> = _viewerUiState.asStateFlow()
 

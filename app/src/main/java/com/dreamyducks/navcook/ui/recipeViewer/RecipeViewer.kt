@@ -9,7 +9,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -59,7 +58,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -71,10 +69,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
-import com.dreamyducks.navcook.data.Recipe
-import com.dreamyducks.navcook.data.Step
 import com.dreamyducks.navcook.format.nonScaledSp
+import com.dreamyducks.navcook.network.Recipe
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 import kotlinx.coroutines.delay
 
@@ -86,44 +85,14 @@ fun RecipeViewer(
     innerPadding: PaddingValues,
     onNavigateBack: () -> Unit
 ) {
-    val recipeUiState = Recipe(
-        id = 0,
-        title = "Pasta",
-        thumbNailImage = R.drawable.pasta,
-        ingredients = listOf(
-            "Pasta",
-            "Tomato Paste",
-            "Meat Ball"
-        ),
-        steps = listOf(
-            Step(
-                title = "Cut Tomato",
-                image = R.drawable.pasta,
-                ingredients = listOf(
-                    "Tomato",
-                    "Salt"
-                ),
-                description = "Cut tomatoes and pour salt"
-            ),
-            Step(
-                title = "No image step Extra long title ",
-                image = null,
-                ingredients = listOf(
-                    "Bacon",
-                    "Tomato Paste"
-                ),
-                description = "Cut tomatoes and pour salt"
-            )
-        )
-
-    )//viewModel.recipeUiState.collectAsState()
+    val recipeUiState = viewModel.recipe //.recipeUiState.collectAsState()
 
     val context = LocalContext.current
 
     val viewerUiState = viewModel.viewerUiState.collectAsState()
 
     var showExitDialog by remember { mutableStateOf(false) }
-    var currentStep by remember { mutableStateOf(recipeUiState.steps!![viewerUiState.value.currentIndex]) }
+    var currentStep by remember { mutableStateOf(recipeUiState.value!!.steps[viewerUiState.value.currentIndex]) }
     var audioScript by remember { mutableStateOf("") }
     var isChangingStep by remember { mutableStateOf(false) }
 
@@ -136,7 +105,7 @@ fun RecipeViewer(
     LaunchedEffect(Unit) {
         viewModel.updateViewerUiState(
             viewerUiState.value.copy(
-                size = recipeUiState.steps!!.size - 1
+                size = recipeUiState.value!!.steps.size - 1
             )
         )
     }
@@ -144,7 +113,7 @@ fun RecipeViewer(
     LaunchedEffect(viewerUiState.value.currentIndex) {
         isChangingStep = true
         delay(100)
-        currentStep = recipeUiState.steps!![viewerUiState.value.currentIndex]
+        currentStep = recipeUiState.value!!.steps[viewerUiState.value.currentIndex]
         isChangingStep = false
 
         audioScript = currentStep.title //Build audio script
@@ -184,8 +153,10 @@ fun RecipeViewer(
                 .animateContentSize()
         ) {
             if (currentStep.image != null) { //step image
-                Image(
-                    painter = painterResource(currentStep.image!!),
+                AsyncImage(
+                    model = ImageRequest.Builder(context = LocalContext.current)
+                        .data(currentStep.image)
+                        .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
                     modifier = modifier
@@ -263,7 +234,7 @@ fun RecipeViewer(
                     style = MaterialTheme.typography.titleLarge
                 )
                 Text( //description
-                    text = currentStep.description
+                    text = currentStep.description.orEmpty()
                 )
             }
         }

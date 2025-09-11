@@ -1,6 +1,7 @@
 package com.dreamyducks.navcook.data
 
 import android.util.Log
+import com.dreamyducks.navcook.network.Recipe
 import com.dreamyducks.navcook.network.SearchResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
