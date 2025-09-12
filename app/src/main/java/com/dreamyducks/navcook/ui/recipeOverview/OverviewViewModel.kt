@@ -10,3 +10,4 @@ class OverviewViewModel() : ViewModel() {
 
     val recipe: StateFlow<Recipe?> = recipeManager.selectedRecipe
 }
+

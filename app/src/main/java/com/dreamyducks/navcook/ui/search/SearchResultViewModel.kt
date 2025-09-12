@@ -1,6 +1,9 @@
 package com.dreamyducks.navcook.ui.search
 
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -15,16 +18,23 @@ import kotlinx.coroutines.flow.StateFlow
 class SearchResultViewModel(
     private val searchRepository: SearchRepository
 ) : ViewModel() {
+    var searchResultScreen: SearchResultScreen by mutableStateOf(SearchResultScreen.Result)
+        private set
+
+    fun updateScreen(screen: SearchResultScreen) {
+        searchResultScreen = screen
+    }
     private val recipeManager = RecipeManager
     val searchResult: StateFlow<List<SearchResult>> = recipeManager.foundRecipes
 
     suspend fun onGetRecipeDetail(
         id: Int,
     ) {
+        updateScreen(SearchResultScreen.LoadingRecipe) //show loading screen on app
         //Create database access to search id
         Log.d("MainActivity", "Selected recipe id: $id")
         val params = mutableMapOf<String, String>()
-        params["recipeId"] = "1"
+        params["recipeId"] = id.toString()
         Log.d("MainActivity", "params set")
 
         val result = searchRepository.getRecipe(params)
@@ -41,4 +51,9 @@ class SearchResultViewModel(
             }
         }
     }
+}
+
+sealed interface SearchResultScreen {
+    object Result : SearchResultScreen
+    object LoadingRecipe : SearchResultScreen
 }

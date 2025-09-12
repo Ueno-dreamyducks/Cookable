@@ -19,13 +19,16 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -65,6 +68,11 @@ fun SearchResultScreen(
     val searchResult = searchResultViewModel.searchResult.collectAsState()
     var topBarHeight by remember { mutableStateOf<Dp>(0.dp) }
     val coroutine = rememberCoroutineScope()
+    val searchResultScreen = searchResultViewModel.searchResultScreen
+
+    LaunchedEffect(Unit) {
+        searchResultViewModel.updateScreen(SearchResultScreen.Result)
+    }
 
     Box(
         modifier = modifier
@@ -83,15 +91,20 @@ fun SearchResultScreen(
                 .padding(top = topBarHeight)
                 .padding(dimensionResource(R.dimen.padding_medium))
         ) {
-            Success(
-                recipes = searchResult.value,
-                onRecipeClick = { recipeId ->
-                    coroutine.launch {
-                        searchResultViewModel.onGetRecipeDetail(id = recipeId)
-                        navigateToRecipeOverview()
-                    }
-                }
-            )
+            when(searchResultScreen) {
+                is SearchResultScreen.Result ->
+                    Success(
+                        recipes = searchResult.value,
+                        onRecipeClick = { recipeId ->
+                            coroutine.launch {
+                                searchResultViewModel.onGetRecipeDetail(id = recipeId)
+                                navigateToRecipeOverview()
+                            }
+                        }
+                    )
+                is SearchResultScreen.LoadingRecipe ->
+                    Loading()
+            }
         }
     }
 }
@@ -205,6 +218,28 @@ private fun Error(
     modifier: Modifier = Modifier
 ) {
 
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun Loading(
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxSize()
+    ) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+        ) {
+            ContainedLoadingIndicator(
+                modifier = modifier
+                    .size(120.dp)
+                    .align(Alignment.Center)
+            )
+        }
+    }
 }
 
 
