@@ -1,9 +1,12 @@
 package com.dreamyducks.navcook.ui.recipeViewer
 
+import android.app.Activity
+import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -29,6 +32,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Flatware
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Menu
@@ -43,7 +47,9 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -68,6 +74,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.zIndex
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -76,6 +84,9 @@ import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.network.Recipe
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 import kotlinx.coroutines.delay
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 
 @Composable
@@ -88,6 +99,8 @@ fun RecipeViewer(
     val recipeUiState = viewModel.recipe //.recipeUiState.collectAsState()
 
     val context = LocalContext.current
+    val window = (context as? Activity)?.window ?: return
+    val insetsController = WindowCompat.getInsetsController(window, window.decorView)
 
     val viewerUiState = viewModel.viewerUiState.collectAsState()
 
@@ -120,6 +133,26 @@ fun RecipeViewer(
         viewModel.textToSpeech(context = context, text = audioScript)
     }
 
+    LaunchedEffect(viewerUiState.value.isShowStatusBar) {
+        if (!viewerUiState.value.isShowStatusBar) {
+            insetsController.hide(WindowInsetsCompat.Type.statusBars())
+        } else {
+            insetsController.show(WindowInsetsCompat.Type.statusBars())
+        }
+    }
+
+    DisposableEffect(Unit) {
+        if (!viewerUiState.value.isShowStatusBar) {
+            insetsController.hide(WindowInsetsCompat.Type.statusBars())
+        }
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) //Keep screen on
+
+        onDispose { //Disable hide status bars and keep screen on when the compose disposed
+            insetsController.show(WindowInsetsCompat.Type.statusBars())
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -135,14 +168,15 @@ fun RecipeViewer(
                 onCancel = { showExitDialog = !showExitDialog }
             )
         }
-        OverlayControl(  //Control on bottom of screen
+        OverlayControl(
+            //Control on bottom of screen
             innerPadding = innerPadding,
             isChangingStep = isChangingStep,
             overlayHeight = { dp ->
                 overlayHeight = dp
             },
             viewModel = viewModel,
-            onShowExitDialog = { showExitDialog = true }
+            onShowExitDialog = { showExitDialog = true },
         )
 
         Column( //Viewer contents
@@ -155,7 +189,7 @@ fun RecipeViewer(
             if (currentStep.image != null) { //step image
                 AsyncImage(
                     model = ImageRequest.Builder(context = LocalContext.current)
-                        .data(currentStep.image)
+                        .data("https://drive.google.com/uc?export=download&id=" + currentStep.image)
                         .build(),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
@@ -199,7 +233,7 @@ fun RecipeViewer(
                         style = MaterialTheme.typography.headlineLarge,
                         fontSize = 32.sp.nonScaledSp,
                         modifier = modifier
-                            .weight(1f, fill = false)
+                            .weight(1f, fill = true)
                     )
                     IconButton(
                         onClick = {
@@ -269,6 +303,8 @@ private fun OverlayControl(
     val density = LocalDensity.current
     var controlHeight by remember { mutableStateOf(0.dp) }
 
+    val animatedOverlayRadius by animateDpAsState(targetValue = if(isShowMenu) dimensionResource(R.dimen.padding_medium) else dimensionResource(R.dimen.padding_extra_large), animationSpec = tween(2000))
+
     Box(
         modifier
             .fillMaxSize()
@@ -306,7 +342,11 @@ private fun OverlayControl(
             }
         }
         Card(
-            shape = RoundedCornerShape(dimensionResource(R.dimen.padding_extra_large)),
+            shape = RoundedCornerShape(
+                animatedOverlayRadius,
+                animatedOverlayRadius,
+                dimensionResource(R.dimen.padding_extra_large),
+                dimensionResource(R.dimen.padding_extra_large)),
             modifier = modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
@@ -362,62 +402,42 @@ private fun OverlayControl(
                     onClick = {
                         //Set contents on menu container
                         toolMenuContent = {
-                            Column(
-                                modifier = modifier
-                                    .fillMaxWidth()
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.menu),
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    modifier = modifier
-                                        .fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.mute_audio)
-                                    )
-                                    Switch(
-                                        checked = viewerUiState.value.isReadAround,
-                                        onCheckedChange = {
-                                            viewModel.updateViewerUiState(
-                                                viewerUiState.value.copy(
-                                                    isReadAround = !viewerUiState.value.isReadAround
-                                                )
-                                            )
-                                        }
-                                    )
-                                }
-                                TextButton(
-                                    onClick = onShowExitDialog,
-                                    modifier = modifier
-                                        .fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.quit)
-                                    )
-                                }
-                            }
+                            Menu(
+                                viewModel = viewModel,
+                                viewerUiState = viewerUiState,
+                                onShowExitDialog = onShowExitDialog
+                            )
                         }
                         isShowMenu = !isShowMenu
-
                     }
                 ) {
                     Icon(Icons.Outlined.Menu, null)
                 }
 
 
-                IconButton(
-                    onClick = {
-                        if (viewerUiState.value.currentIndex < viewerUiState.value.size) {
-                            viewModel.updateUiStateIndex(1)
-                        }
-                    },
-                    enabled = viewerUiState.value.currentIndex < viewerUiState.value.size
-                ) {
-                    Icon(Icons.AutoMirrored.Default.ArrowForward, null)
+                if (viewerUiState.value.currentIndex < viewerUiState.value.size) {
+                    IconButton(
+                        onClick = {
+                            if (viewerUiState.value.currentIndex < viewerUiState.value.size) {
+                                viewModel.updateUiStateIndex(1)
+                            }
+                        },
+                    ) {
+                        Icon(Icons.AutoMirrored.Default.ArrowForward, null)
+                    }
+                } else {
+                    IconButton(
+                        onClick = onShowExitDialog,
+                        modifier = modifier
+                            .clip(RoundedCornerShape(50.dp))
+                            .background(MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(
+                            Icons.Default.Check,
+                            stringResource(R.string.finish),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                 }
             }
         }
@@ -440,6 +460,92 @@ private fun ToolMenu(
                 .padding(dimensionResource(R.dimen.padding_medium))
         ) {
             content()
+        }
+    }
+}
+
+@Composable
+private fun Menu(
+    viewModel: ViewerViewModel,
+    viewerUiState: State<ViewerUiState>,
+    onShowExitDialog: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var currentTime by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            val calendar = Calendar.getInstance()
+            val format = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+            currentTime = format.format(calendar.time)
+            delay(1000)
+        }
+    }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = stringResource(R.string.menu),
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = currentTime,
+            style = MaterialTheme.typography.titleMedium,
+            fontSize = 32.sp.nonScaledSp,
+            textAlign = TextAlign.Center,
+            modifier = modifier
+                .fillMaxWidth()
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = modifier
+                .fillMaxWidth()
+        ) {
+            Text(text = stringResource(R.string.show_status_bars))
+            Switch(
+                checked = viewerUiState.value.isShowStatusBar,
+                onCheckedChange = {
+                    viewModel.updateViewerUiState(
+                        viewerUiState.value.copy(
+                            isShowStatusBar = it
+                        )
+                    )
+                }
+            )
+        }
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = modifier
+                .fillMaxWidth()
+        ) {
+
+            Text(
+                text = stringResource(R.string.mute_audio)
+            )
+            Switch(
+                checked = viewerUiState.value.isReadAround,
+                onCheckedChange = {
+                    viewModel.updateViewerUiState(
+                        viewerUiState.value.copy(
+                            isReadAround = !viewerUiState.value.isReadAround
+                        )
+                    )
+                }
+            )
+        }
+        TextButton(
+            onClick = onShowExitDialog,
+            modifier = modifier
+                .fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.quit)
+            )
         }
     }
 }

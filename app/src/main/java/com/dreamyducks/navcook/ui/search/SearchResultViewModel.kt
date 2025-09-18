@@ -25,6 +25,7 @@ class SearchResultViewModel(
         searchResultScreen = screen
     }
     private val recipeManager = RecipeManager
+    val searchQuery: StateFlow<String> = recipeManager.searchQuery
     val searchResult: StateFlow<List<SearchResult>> = recipeManager.foundRecipes
 
     suspend fun onGetRecipeDetail(
@@ -32,13 +33,11 @@ class SearchResultViewModel(
     ) {
         updateScreen(SearchResultScreen.LoadingRecipe) //show loading screen on app
         //Create database access to search id
-        Log.d("MainActivity", "Selected recipe id: $id")
         val params = mutableMapOf<String, String>()
         params["recipeId"] = id.toString()
-        Log.d("MainActivity", "params set")
 
         val result = searchRepository.getRecipe(params)
-        Log.d("MainActivity", "From recipe id: " + result.toString())
+        Log.d("MainActivity", result.toString());
         recipeManager.updateSelectedRecipe(result)
     }
 

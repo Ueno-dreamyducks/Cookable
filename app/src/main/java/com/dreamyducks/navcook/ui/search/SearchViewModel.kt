@@ -47,47 +47,10 @@ class SearchViewModel(
 
         val result = searchRepository.onSearch(params)
 
+        recipeManager.updateSearchQuery(searchQuery.value)
         recipeManager.updateFoundRecipes(result)
 
         searchUiState = SearchUiState.Success
-
-//        if (/*success*/ true) {
-//            val searchResult = SearchResult(
-//                searchQuery = searchQuery.value,
-//                recipes = listOf<Recipe>(
-//                    Recipe(
-//                        id = 0,
-//                        title = "Pasta",
-//                        thumbNailImage = R.drawable.pasta,
-//                        ingredients = listOf<String>(
-//                            "Pasta",
-//                            "Tomato Paste",
-//                            "Meat Ball"
-//                        )
-//                    ),
-//                    Recipe(
-//                        id = 1,
-//                        title = "Title of Recipe",
-//                        thumbNailImage = R.drawable.pasta,
-//                    ),
-//                    Recipe(
-//                        id = 2,
-//                        title = "Title of Recipe",
-//                        thumbNailImage = R.drawable.pasta,
-//                    ),
-//                    Recipe(
-//                        id = 3,
-//                        title = "Title of Recipe 2",
-//                        thumbNailImage = R.drawable.pasta
-//                    )
-//                )
-//            )
-//
-//            recipeManager.updateFoundRecipes(searchResult)
-//            searchUiState = SearchUiState.Success
-//        } else {
-//            searchUiState = SearchUiState.Error
-//        }
     }
 
     companion object {

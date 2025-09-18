@@ -4,6 +4,8 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dreamyducks.navcook.SampleData.FriedRice_Recipe
+import com.dreamyducks.navcook.data.RecipeManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -50,6 +52,10 @@ class NavCookViewModel() : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             textToSpeech?.stop()
         }
+    }
+
+    fun setSampleRecipe() {
+        RecipeManager.updateSelectedRecipe(FriedRice_Recipe)
     }
 }
 

@@ -69,5 +69,5 @@ data class ViewerUiState(
     val audioScript: String = "",
     val isReadAround: Boolean = false,
     val isMicOn: Boolean = true,
-
+    val isShowStatusBar: Boolean = false
 )

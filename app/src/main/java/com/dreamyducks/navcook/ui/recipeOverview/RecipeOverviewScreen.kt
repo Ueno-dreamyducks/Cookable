@@ -64,6 +64,7 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.format.nonScaledSp
+import com.dreamyducks.navcook.network.Ingredient
 import com.dreamyducks.navcook.network.Recipe
 
 @Composable
@@ -322,7 +323,7 @@ private fun Ingredients(
     )
 
     Column {
-        recipe!!.ingredients?.forEach { ingredient ->
+        recipe!!.ingredients.forEach { ingredient ->
             IngredientWithCheckbox(ingredient)
         }
     }
@@ -330,7 +331,7 @@ private fun Ingredients(
 
 @Composable
 private fun IngredientWithCheckbox(
-    ingredient: String,
+    ingredient: Ingredient,
     modifier: Modifier = Modifier
 ) {
     var checked by remember { mutableStateOf(false) }
@@ -343,26 +344,33 @@ private fun IngredientWithCheckbox(
             }
             .fillMaxWidth()
     ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = { checked = it },
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = modifier
-        )
+                .weight(1f, fill = true)
+        ) {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = { checked = it },
+                modifier = modifier
+            )
+            Text(
+                text = ingredient.name,
+                style = LocalTextStyle.current.copy(textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None),
+            )
+        }
         Text(
-            text = ingredient,
-            style = LocalTextStyle.current.copy(textDecoration = if (checked) TextDecoration.LineThrough else TextDecoration.None)
+            text = ingredient.amount.toString() + " " + ingredient.unit,
         )
     }
 }
 
-@Preview(showBackground = true, showSystemUi = true)
+@Preview(showBackground = true)
 @Composable
-fun RecipeOverviewScreenPreview() {
+fun IngredientWithCheckboxPreview() {
     MaterialTheme {
-        RecipeOverviewScreen(
-            innerPadding = PaddingValues(0.dp),
-            onStartClick = {}
-        )
+        IngredientWithCheckbox(Ingredient("Chicken", "pounds", 1))
     }
 }
+
 

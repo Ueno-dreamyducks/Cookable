@@ -79,7 +79,7 @@ fun SearchResultScreen(
             .fillMaxSize()
     ) {
         SearchResultTopBar(
-            searchQuery = "[Search result]",//searchResult.value.searchQuery,
+            searchQuery = searchResultViewModel.searchQuery.collectAsState().value,
             onNavigationBack = onNavigateBack,
             height = {
                 topBarHeight = it

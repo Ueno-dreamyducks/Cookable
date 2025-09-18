@@ -79,6 +79,7 @@ fun Homepage(
 
             OutlinedButton(
                 onClick = {
+                    viewModel.setSampleRecipe()
                     navigateToOverview()
                 }
             ) {
