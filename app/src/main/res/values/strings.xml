@@ -21,6 +21,9 @@
     <string name="side_dish">Side Dish</string>
     <string name="soup">Soup</string>
 
+    <string name="no_internet">No Internet</string>
+    <string name="an_error_occurred">An Error Occurred</string>
+    <string name="try_again">Try Again</string>
     <string name="no_recipe_found">No Recipe Found</string>
 
     <string name="start">START</string>

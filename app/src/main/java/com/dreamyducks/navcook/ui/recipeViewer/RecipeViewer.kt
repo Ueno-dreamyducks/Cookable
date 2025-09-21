@@ -275,6 +275,13 @@ fun RecipeViewer(
     }
 }
 
+//State to show which menu screen is selected
+sealed interface ToolMenuState {
+    object None : ToolMenuState
+    object CameraView : ToolMenuState
+    object Menu : ToolMenuState
+}
+
 @Composable
 private fun OverlayControl(
     modifier: Modifier = Modifier,
@@ -298,12 +305,17 @@ private fun OverlayControl(
     )
 
     var isShowMenu by remember { mutableStateOf(false) }
+    var toolMenuState: ToolMenuState by remember { mutableStateOf(ToolMenuState.None) }
     var toolMenuContent by remember { mutableStateOf<@Composable () -> Unit>({ Text("Initial Menu") }) } //set composes to show when menu container show up
 
     val density = LocalDensity.current
     var controlHeight by remember { mutableStateOf(0.dp) }
 
-    val animatedOverlayRadius by animateDpAsState(targetValue = if(isShowMenu) dimensionResource(R.dimen.padding_medium) else dimensionResource(R.dimen.padding_extra_large), animationSpec = tween(2000))
+    val animatedOverlayRadius by animateDpAsState(
+        targetValue = if (isShowMenu) dimensionResource(R.dimen.padding_medium) else dimensionResource(
+            R.dimen.padding_extra_large
+        ), animationSpec = tween(2000)
+    )
 
     Box(
         modifier
@@ -346,7 +358,8 @@ private fun OverlayControl(
                 animatedOverlayRadius,
                 animatedOverlayRadius,
                 dimensionResource(R.dimen.padding_extra_large),
-                dimensionResource(R.dimen.padding_extra_large)),
+                dimensionResource(R.dimen.padding_extra_large)
+            ),
             modifier = modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
@@ -376,7 +389,20 @@ private fun OverlayControl(
                     Icon(Icons.AutoMirrored.Default.ArrowBack, null)
                 }
                 IconButton(
-                    onClick = {}
+                    onClick = {
+                        if (toolMenuState == ToolMenuState.CameraView) {
+                            isShowMenu = false
+                            toolMenuState = ToolMenuState.None
+                            toolMenuContent = {}
+                        } else {
+                            isShowMenu = false
+                            isShowMenu = true
+                            toolMenuState = ToolMenuState.CameraView
+                        }
+                        toolMenuContent = {
+                            CameraView()
+                        }
+                    }
                 ) {
                     Icon(Icons.Outlined.CameraAlt, null)
                 }
@@ -408,7 +434,13 @@ private fun OverlayControl(
                                 onShowExitDialog = onShowExitDialog
                             )
                         }
-                        isShowMenu = !isShowMenu
+                        if (toolMenuState == ToolMenuState.Menu) {
+                            isShowMenu = false
+                            toolMenuState = ToolMenuState.None
+                        } else {
+                            isShowMenu = true
+                            toolMenuState = ToolMenuState.Menu
+                        }
                     }
                 ) {
                     Icon(Icons.Outlined.Menu, null)
@@ -450,16 +482,22 @@ private fun ToolMenu(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
 ) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(R.dimen.padding_small)),
+    Box(
         modifier = modifier
-            .fillMaxWidth(0.7f)
+            .fillMaxSize()
     ) {
-        Column(
+        Card(
+            elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(R.dimen.padding_small)),
             modifier = modifier
-                .padding(dimensionResource(R.dimen.padding_medium))
+                .fillMaxWidth(0.7f)
+                .align(Alignment.BottomCenter)
         ) {
-            content()
+            Column(
+                modifier = modifier
+                    .padding(dimensionResource(R.dimen.padding_medium))
+            ) {
+                content()
+            }
         }
     }
 }

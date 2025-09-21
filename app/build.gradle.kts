@@ -64,6 +64,9 @@ dependencies {
 
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
 
+    //permission api
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+
     // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
 // Retrofit with Kotlin serialization Converter
@@ -74,6 +77,12 @@ dependencies {
 
     // Coil
     implementation("io.coil-kt:coil-compose:2.4.0")
+
+    //camera
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation("androidx.camera:camera-core:1.5.0")
+    implementation("androidx.camera:camera-camera2:1.5.0")
 
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)

@@ -21,6 +21,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.SignalWifiOff
+import androidx.compose.material.icons.outlined.Dangerous
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,6 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -58,6 +61,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -99,6 +103,24 @@ fun SearchScreen(
             is SearchUiState.Loading -> Box(modifier = modifier.padding(dimensionResource(R.dimen.padding_medium))) { Loading() }
             is SearchUiState.Success -> {
                 onNavigateToSearchResult()
+            }
+            is SearchUiState.NoInternet -> {
+                NoInternet(
+                    onSearch = {
+                        coroutineScope.launch {
+                            searchViewModel.onSearch()
+                        }
+                    }
+                )
+            }
+            is SearchUiState.Error -> {
+                Error(
+                    onSearch = {
+                        coroutineScope.launch {
+                            searchViewModel.onSearch()
+                        }
+                    }
+                )
             }
 
             else -> Column(
@@ -350,6 +372,94 @@ private fun Loading(
     }
 }
 
+@Composable
+private fun NoInternet(
+    onSearch: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = dimensionResource(R.dimen.padding_small))
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_medium), Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = modifier
+                .fillMaxSize()
+                .padding(dimensionResource(R.dimen.padding_medium))
+        ) {
+            Icon(
+                Icons.Default.SignalWifiOff,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = modifier
+                    .size(60.dp)
+            )
+            Text(
+                text = stringResource(R.string.no_internet),
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Medium
+            )
+            OutlinedButton(
+                onClick = onSearch
+            ) {
+                Text(
+                    text = stringResource(R.string.try_again),
+                )
+            }
+        }
+    }
+}
+@Preview(showBackground = true)
+@Composable
+fun NoInternetPreview() {
+    MaterialTheme {
+        NoInternet({})
+    }
+}
+
+@Composable
+private fun Error(
+    onSearch: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = dimensionResource(R.dimen.padding_small))
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_medium), Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = modifier
+                .fillMaxSize()
+                .padding(dimensionResource(R.dimen.padding_medium))
+        ) {
+            Icon(
+                Icons.Outlined.Dangerous,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = modifier
+                    .size(60.dp)
+            )
+            Text(
+                text = stringResource(R.string.an_error_occurred),
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Medium
+            )
+            OutlinedButton(
+                onClick = onSearch
+            ) {
+                Text(
+                    text = stringResource(R.string.try_again),
+                )
+            }
+        }
+    }
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchTopAppBar(

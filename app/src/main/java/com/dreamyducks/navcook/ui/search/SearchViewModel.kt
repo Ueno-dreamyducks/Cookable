@@ -14,6 +14,7 @@ import com.dreamyducks.navcook.data.SearchRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import okio.IOException
 
 class SearchViewModel(
     private val searchRepository: SearchRepository
@@ -45,12 +46,18 @@ class SearchViewModel(
         val params = mutableMapOf<String, String>()
         params["search"] = searchQuery.value
 
-        val result = searchRepository.onSearch(params)
+        try {
+            val result = searchRepository.onSearch(params)
 
-        recipeManager.updateSearchQuery(searchQuery.value)
-        recipeManager.updateFoundRecipes(result)
+            recipeManager.updateSearchQuery(searchQuery.value)
+            recipeManager.updateFoundRecipes(result)
 
-        searchUiState = SearchUiState.Success
+            searchUiState = SearchUiState.Success
+        } catch (e: IOException) {
+            searchUiState = SearchUiState.NoInternet
+        } catch (e: Exception) {
+            searchUiState = SearchUiState.Error
+        }
     }
 
     companion object {
@@ -68,6 +75,8 @@ sealed interface SearchUiState {
     object None : SearchUiState
     object Loading : SearchUiState
     object Error : SearchUiState
+
+    object NoInternet : SearchUiState
 
     //data class Success(val recipes: List<Recipe>) : SearchUiState
     object Success : SearchUiState
