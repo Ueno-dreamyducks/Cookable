@@ -9,7 +9,8 @@ data class SearchResult (
     val title: String = "",
     val thumbnail: String = "",
     val ingredients: String = "",
-    val steps: String = ""
+    val steps: String = "",
+    val tags: String = ""
 )
 
 @Serializable
@@ -18,7 +19,8 @@ data class Recipe(
     val title: String = "",
     val thumbnail: String = "",
     val ingredients: List<Ingredient>,
-    val steps: List<Step>
+    val steps: List<Step>,
+    val tags: String = "",
 )
 
 @Serializable

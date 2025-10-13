@@ -13,12 +13,14 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -33,12 +35,15 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flatware
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
@@ -58,9 +63,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
@@ -77,7 +86,7 @@ import androidx.compose.ui.zIndex
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.format.nonScaledSp
@@ -89,6 +98,7 @@ import java.util.Calendar
 import java.util.Locale
 
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun RecipeViewer(
     modifier: Modifier = Modifier,
@@ -187,11 +197,26 @@ fun RecipeViewer(
                 .animateContentSize()
         ) {
             if (currentStep.image != null) { //step image
-                AsyncImage(
+                SubcomposeAsyncImage(
                     model = ImageRequest.Builder(context = LocalContext.current)
                         .data("https://drive.google.com/uc?export=download&id=" + currentStep.image)
                         .build(),
                     contentDescription = null,
+                    loading = {
+                        Card(
+                            shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+                            modifier = modifier
+                                .fillMaxSize()
+                                .padding(dimensionResource(R.dimen.padding_medium))
+                        ) {
+                            Box(
+                                modifier = modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularWavyProgressIndicator()
+                            }
+                        }
+                    },
                     contentScale = ContentScale.Crop,
                     modifier = modifier
                         .fillMaxWidth()
@@ -305,8 +330,10 @@ private fun OverlayControl(
     )
 
     var isShowMenu by remember { mutableStateOf(false) }
+    var menuComposableSize by remember { mutableStateOf(Rect.Zero) }
     var toolMenuState: ToolMenuState by remember { mutableStateOf(ToolMenuState.None) }
     var toolMenuContent by remember { mutableStateOf<@Composable () -> Unit>({ Text("Initial Menu") }) } //set composes to show when menu container show up
+    var titleResId by remember { mutableStateOf<Int?>(null) }
 
     val density = LocalDensity.current
     var controlHeight by remember { mutableStateOf(0.dp) }
@@ -323,6 +350,16 @@ private fun OverlayControl(
             .zIndex(2f)
             .background(backgroundColor)
             .padding(innerPadding)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = { offset: Offset ->
+                        if (isShowMenu && !menuComposableSize.contains(offset)) {
+                            isShowMenu = false
+                            toolMenuState = ToolMenuState.None
+                        }
+                    }
+                )
+            }
     ) {
         AnimatedVisibility( //expanded menu
             isShowMenu,
@@ -343,11 +380,35 @@ private fun OverlayControl(
                             y = (-controlHeight - 40.dp).roundToPx()
                         )
                     }
+                    .onGloballyPositioned { coordinates ->
+                        val position = coordinates.positionInWindow()
+                        val size = coordinates.size
+                        menuComposableSize = Rect(
+                            left = position.x,
+                            top = position.y,
+                            right = position.x + size.width,
+                            bottom = position.y + size.height
+                        )
+                    }
             ) {
                 ToolMenu(
                     modifier = modifier
-                        .align(Alignment.BottomCenter)
-
+                        .align(Alignment.BottomCenter),
+                    closeMenu = {
+                        changeMenuState(
+                            currentState = toolMenuState,
+                            onShowMenuChange = { it ->
+                                isShowMenu = it
+                            },
+                            newState = { it ->
+                                toolMenuState = it
+                            },
+                            newTitle = { it ->
+                                titleResId = it
+                            }
+                        )
+                    },
+                    titleResId = titleResId
                 ) {
                     toolMenuContent()
                 }
@@ -362,9 +423,8 @@ private fun OverlayControl(
             ),
             modifier = modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
                 .padding(bottom = dimensionResource(R.dimen.padding_extra_large))
-                .padding(horizontal = 50.dp)
+                .fillMaxWidth(0.7f)
                 .onGloballyPositioned { coordinates ->
                     val heightPx = coordinates.size.height
                     controlHeight = with(density) { heightPx.toDp() }
@@ -390,15 +450,19 @@ private fun OverlayControl(
                 }
                 IconButton(
                     onClick = {
-                        if (toolMenuState == ToolMenuState.CameraView) {
-                            isShowMenu = false
-                            toolMenuState = ToolMenuState.None
-                            toolMenuContent = {}
-                        } else {
-                            isShowMenu = false
-                            isShowMenu = true
-                            toolMenuState = ToolMenuState.CameraView
-                        }
+                        changeMenuState(
+                            currentState = toolMenuState,
+                            clickedMenuState = ToolMenuState.CameraView,
+                            onShowMenuChange = { it ->
+                                isShowMenu = it
+                            },
+                            newState = { it ->
+                                toolMenuState = it
+                            },
+                            newTitle = { it ->
+                                titleResId = it
+                            }
+                        )
                         toolMenuContent = {
                             CameraView()
                         }
@@ -427,6 +491,7 @@ private fun OverlayControl(
                 IconButton(
                     onClick = {
                         //Set contents on menu container
+                        titleResId = R.string.menu
                         toolMenuContent = {
                             Menu(
                                 viewModel = viewModel,
@@ -434,13 +499,20 @@ private fun OverlayControl(
                                 onShowExitDialog = onShowExitDialog
                             )
                         }
-                        if (toolMenuState == ToolMenuState.Menu) {
-                            isShowMenu = false
-                            toolMenuState = ToolMenuState.None
-                        } else {
-                            isShowMenu = true
-                            toolMenuState = ToolMenuState.Menu
-                        }
+                        changeMenuState(
+                            currentState = toolMenuState,
+                            clickedMenuState = ToolMenuState.Menu,
+                            clickedStateTitleResId = R.string.menu,
+                            onShowMenuChange = { it ->
+                                isShowMenu = it
+                            },
+                            newState = { it ->
+                                toolMenuState = it
+                            },
+                            newTitle = { it ->
+                                titleResId = it
+                            }
+                        )
                     }
                 ) {
                     Icon(Icons.Outlined.Menu, null)
@@ -473,30 +545,82 @@ private fun OverlayControl(
                 }
             }
         }
-
     }
 }
 
+private fun changeMenuState(
+    currentState: ToolMenuState?,
+    clickedMenuState: ToolMenuState? = null,
+    clickedStateTitleResId: Int? = null,
+    onShowMenuChange: (Boolean) -> Unit,
+    newState: (ToolMenuState) -> Unit,
+    newTitle: (Int?) -> Unit,
+) {
+    if (clickedMenuState == null || currentState == clickedMenuState) {
+        onShowMenuChange(false)
+        newState(ToolMenuState.None)
+        newTitle(null)
+    } else {
+        onShowMenuChange(true)
+        newState(clickedMenuState)
+        newTitle(clickedStateTitleResId)
+    }
+
+}
+
+
 @Composable
 private fun ToolMenu(
+    titleResId: Int?,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    closeMenu: () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
+            .fillMaxHeight(0.6f)
     ) {
         Card(
             elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(R.dimen.padding_small)),
             modifier = modifier
                 .fillMaxWidth(0.7f)
-                .align(Alignment.BottomCenter)
         ) {
-            Column(
+            Box(
                 modifier = modifier
-                    .padding(dimensionResource(R.dimen.padding_medium))
             ) {
-                content()
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .fillMaxWidth()
+                        .zIndex(2f)
+                ) {
+                    if (titleResId != null) {
+                        Text(
+                            text = stringResource(id = titleResId),
+                            fontWeight = FontWeight.Bold,
+                            modifier = modifier
+                                .padding(dimensionResource(R.dimen.padding_medium))
+                        )
+                    } else {
+                        Text("")
+                    }
+                    IconButton(
+                        onClick = closeMenu,
+                    ) {
+                        Icon(
+                            Icons.Default.Close,
+                            stringResource(R.string.close)
+                        )
+                    }
+                }
+                Column(
+                    modifier = modifier
+                        .padding(dimensionResource(R.dimen.padding_medium))
+                ) {
+                    content()
+                }
             }
         }
     }
@@ -524,10 +648,6 @@ private fun Menu(
         modifier = modifier
             .fillMaxWidth()
     ) {
-        Text(
-            text = stringResource(R.string.menu),
-            fontWeight = FontWeight.Bold
-        )
         Text(
             text = currentTime,
             style = MaterialTheme.typography.titleMedium,
@@ -616,7 +736,8 @@ private fun ExitDialog(
                 )
                 Text(
                     text = stringResource(R.string.exit_recipe),
-                    fontWeight = FontWeight.Medium,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     modifier = modifier
                         .fillMaxWidth()
@@ -661,5 +782,13 @@ fun RecipeViewerPreview() {
             innerPadding = PaddingValues(0.dp),
             onNavigateBack = {}
         )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun ExitDialogPreview() {
+    NavCookTheme {
+        ExitDialog({},{})
     }
 }

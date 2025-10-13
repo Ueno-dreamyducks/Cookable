@@ -16,6 +16,7 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -31,6 +32,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.viewinterop.AndroidView
@@ -39,7 +42,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.dreamyducks.navcook.R
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.PermissionStatus
 import com.google.accompanist.permissions.rememberPermissionState
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -50,6 +53,7 @@ fun CameraView(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    var capturedImage by remember { mutableStateOf<Bitmap?>(null)}
     val lifecycleOwner = LocalLifecycleOwner.current
     val cameraPermissionGranted = rememberPermissionState(Manifest.permission.CAMERA)
 
@@ -83,21 +87,31 @@ fun CameraView(
 
     Box(
         modifier = modifier
-            .fillMaxHeight(0.5f)
+            .fillMaxHeight(0.6f)
     ) {
-        if (cameraPermissionGranted.status.isGranted) {
-            CameraScreen(
-                context = context,
-                lifecycleOwner = lifecycleOwner,
-                onCapture = {}
-            )
-        } else {
-            Button(
-                onClick = { requestPermissionLauncher.launch(Manifest.permission.CAMERA) },
-                modifier = modifier
-                    .align(Alignment.Center)
-            ) {
-                Text("Allow camera access")
+        when(cameraPermissionGranted.status) {
+            is PermissionStatus.Granted -> {
+                if(capturedImage == null) {
+                    CameraScreen(
+                        context = context,
+                        lifecycleOwner = lifecycleOwner,
+                        onCapture = { bitmap ->
+                            capturedImage = bitmap
+                        }
+                    )
+                } else {
+                    CaptureImageView(capturedImage!!)
+                }
+            }
+
+            is PermissionStatus.Denied -> {
+                Button(
+                    onClick = { requestPermissionLauncher.launch(Manifest.permission.CAMERA) },
+                    modifier = modifier
+                        .align(Alignment.Center)
+                ) {
+                    Text("Allow camera access")
+                }
             }
         }
     }
@@ -126,7 +140,7 @@ private fun CameraScreen(
                 factory = {
                     PreviewView(it).apply {
                         implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                        scaleType = PreviewView.ScaleType.FIT_CENTER
+                        scaleType = PreviewView.ScaleType.FILL_CENTER
                     }
                 },
                 update = { previewView ->
@@ -199,6 +213,7 @@ private fun captureImage(
             override fun onError(exception: ImageCaptureException) {
                 super.onError(exception)
                 // Handle error appropriately
+                Log.d("MainActivity", "Error on capture image")
             }
 
             override fun onCaptureSuccess(image: androidx.camera.core.ImageProxy) {
@@ -211,4 +226,21 @@ private fun captureImage(
             }
         }
     )
+}
+
+@Composable
+private fun CaptureImageView(
+    bitmap: Bitmap,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = null,
+            modifier = modifier.fillMaxSize(),
+            contentScale = ContentScale.Fit,
+        )
+    }
 }

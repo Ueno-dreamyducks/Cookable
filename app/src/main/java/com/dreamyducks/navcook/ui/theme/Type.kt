@@ -70,6 +70,7 @@ val Typography = Typography(
     titleMedium = TextStyle(
         fontFamily = NewsReader,
         fontWeight = FontWeight.ExtraBold,
+        fontSize = 32.sp
     ),
 
     titleSmall = baseline.titleSmall.copy(fontFamily = NotoSans),

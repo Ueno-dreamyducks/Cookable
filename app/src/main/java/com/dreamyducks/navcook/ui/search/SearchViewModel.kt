@@ -1,5 +1,6 @@
 package com.dreamyducks.navcook.ui.search
 
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -56,6 +57,7 @@ class SearchViewModel(
         } catch (e: IOException) {
             searchUiState = SearchUiState.NoInternet
         } catch (e: Exception) {
+            Log.e("MainActivity", e.toString())
             searchUiState = SearchUiState.Error
         }
     }

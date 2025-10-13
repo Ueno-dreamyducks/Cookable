@@ -7,6 +7,7 @@ import com.dreamyducks.navcook.network.SearchResult
 interface SearchRepository {
     suspend fun onSearch(params: MutableMap<String, String>): List<SearchResult>
     suspend fun getRecipe(params: MutableMap<String, String>) : Recipe
+    suspend fun  getTodaysRecipe(params: MutableMap<String, String>) : Recipe
 }
 
 class NetworkSearchRepository(
@@ -17,4 +18,7 @@ class NetworkSearchRepository(
 
     override suspend fun getRecipe(params: MutableMap<String, String>): Recipe =
         navCookApiService.getRecipe(params)
+
+    override suspend fun getTodaysRecipe(params: MutableMap<String, String>): Recipe =
+        navCookApiService.getTodaysId(params)
 }

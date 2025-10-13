@@ -11,6 +11,7 @@
 
     <string name="hello">Hello %s</string>
     <string name="search_recipe">Search Recipe</string>
+    <string name="todays_recipe">Today\'s Recipe</string>
 
     <string name="no_recent_search">No Recent Search</string>
     <string name="bbq">BBQ</string>
@@ -34,6 +35,7 @@
     <string name="play_audio_description">Play audio description</string>
     <string name="you_need">You Need:</string>
     <string name="description">Description:</string>
+    <string name="close">Close</string>
     <string name="menu">Menu</string>
     <string name="show_status_bars">Show status bars</string>
     <string name="mute_audio">Mute Audio</string>

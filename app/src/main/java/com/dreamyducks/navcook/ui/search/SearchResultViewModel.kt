@@ -35,7 +35,7 @@ class SearchResultViewModel(
         //Create database access to search id
         val params = mutableMapOf<String, String>()
         params["recipeId"] = id.toString()
-
+        Log.d("MainActivity", params.toString())
         val result = searchRepository.getRecipe(params)
         Log.d("MainActivity", result.toString());
         recipeManager.updateSelectedRecipe(result)
