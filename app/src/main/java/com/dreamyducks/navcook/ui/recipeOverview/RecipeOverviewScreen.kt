@@ -128,7 +128,7 @@ fun RecipeOverviewScreen(
                     .padding(dimensionResource(R.dimen.padding_medium))
                     .padding(bottom = controlHeight)
             ) {
-                Description()
+                Description(recipe = recipe.value)
                 Ingredients(
                     recipe = recipe.value
                 )
@@ -264,6 +264,7 @@ private fun BigPicture(
 
 @Composable
 private fun Description(
+    recipe: Recipe?,
     modifier: Modifier = Modifier
 ) {
     var descriptionLineCount by remember { mutableIntStateOf(0) }
@@ -271,10 +272,7 @@ private fun Description(
     var isDescriptionExpand by remember { mutableStateOf(false) }
 
     Text(
-        text = "You're going to make a choice today that will have a direct impact on where you are five years from now. The truth is, you'll make choice like that every day of your life. The problem is that on most days, you won't know the choice you make will have such a huge impact on your life in the future. So if you want to end up in a certain place in the future, you need to be careful of the choices you make today.\n" +
-                "You're going to make a choice today that will have a direct impact on where you are five years from now. The truth is, you'll make choice like that every day of your life. The problem is that on most days, you won't know the choice you make will have such a huge impact on your life in the future. So if you want to end up in a certain place in the future, you need to be careful of the choices you make today.\n" +
-                "Love isn't always a ray of sunshine. That's what the older girls kept telling her when she said she had found the perfect man. She had thought this was simply bitter talk on their part since they had been unable to find true love like hers. But now she had to face the fact that they may have been right. Love may not always be a ray of sunshine. That is unless they were referring to how the sun can burn.\n" +
-                "The thing that's great about this job is the time sourcing the items involves no traveling. I just look online to buy it. It's really as simple as that. While everyone else is searching for what they can sell, I sit in front of my computer and buy better stuff for less money and spend a fraction of the time doing it.",
+        text = recipe!!.description,
         onTextLayout = { textLayoutResult ->
             descriptionLineCount = textLayoutResult.lineCount
         },

@@ -10,11 +10,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -49,7 +51,6 @@ import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
-import com.dreamyducks.navcook.network.Recipe
 import com.dreamyducks.navcook.ui.NavCookViewModel
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 
@@ -89,12 +90,7 @@ fun Homepage(
                     onSearchClick = navigateToSearch
                 )
             }
-            when(homepageUiState.todaysRecipeState) {
-                is TodaysRecipeState.Success -> {
-                    TodaysRecipe(recipe = (homepageUiState.todaysRecipeState as TodaysRecipeState.Success).recipe)
-                }
-                 else -> {}
-            }
+            TodaysRecipe(uiState = homepageUiState)
             Spacer(modifier.weight(1f))
             OutlinedButton(
                 onClick = {
@@ -185,61 +181,95 @@ fun Search(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun TodaysRecipe(
-    recipe: Recipe,
+    uiState: HomepageUiState,
     modifier: Modifier = Modifier
 ) {
-    Column {
+    val recipeState = uiState.todaysRecipeState
+
+    Card(
+        shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
         Text(
             text = stringResource(R.string.todays_recipe),
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
+            modifier = modifier
+                .padding(dimensionResource(R.dimen.padding_medium))
         )
-
-        Card(
+        Box(
+            contentAlignment = Alignment.BottomStart,
             modifier = modifier
                 .fillMaxWidth()
+                .height(300.dp)
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_medium)),
-                modifier = modifier
-                    .padding(dimensionResource(R.dimen.padding_medium))
-                    .fillMaxWidth()
-            ) {
-                SubcomposeAsyncImage(
-                    model = ImageRequest.Builder(context = LocalContext.current)
-                        .data("https://drive.google.com/uc?export=download&id=" + recipe.thumbnail)
-                        .build(),
-                    contentDescription = null,
-                    loading = {
-                        Card(
-                            shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+            when (recipeState) {
+                is TodaysRecipeState.Loading -> {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxSize()
+                    ) {
+                        CircularWavyProgressIndicator(
                             modifier = modifier
-                                .fillMaxSize()
-                                .padding(dimensionResource(R.dimen.padding_medium))
-                        ) {
-                            Box(
-                                modifier = modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                                .padding(dimensionResource(R.dimen.padding_extra_large))
+                        )
+                    }
+                }
+                is TodaysRecipeState.Success -> {
+                    SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(context = LocalContext.current)
+                            .data(recipeState.recipe.thumbnail)
+                            .build(),
+                        contentDescription = null,
+                        loading = {
+                            Card(
+                                shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+                                modifier = modifier
+                                    .fillMaxSize()
+                                    .padding(dimensionResource(R.dimen.padding_medium))
                             ) {
-                                CircularWavyProgressIndicator()
+                                Box(
+                                    modifier = modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CircularWavyProgressIndicator()
+                                }
                             }
-                        }
-                    },
-                    contentScale = ContentScale.Crop,
-                    modifier = modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .drawWithCache {
-                            val gradient = Brush.verticalGradient(
-                                colors = listOf(Color.Transparent, Color.Black),
-                                startY = size.height / 10,
-                                endY = size.height
+                        },
+                        contentScale = ContentScale.Crop,
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .aspectRatio(4f/3f)
+                            .drawWithCache {
+                                val gradient = Brush.verticalGradient(
+                                    colors = listOf(Color.Transparent, Color.Transparent, Color.Black),
+                                    startY = size.height / 5,
+                                    endY = size.height
+                                )
+                                onDrawWithContent {
+                                    drawContent()
+                                    drawRect(gradient, blendMode = BlendMode.Multiply)
+                                }
+                            }
+                            .clip(RoundedCornerShape(dimensionResource(R.dimen.padding_large)))
+                    )
+
+                    Row(
+                        modifier = modifier
+                            .padding(dimensionResource(R.dimen.padding_medium))
+                    ) {
+                        Button(
+                            onClick = {}
+                        ) {
+                            Text(
+                                "Start"
                             )
-                            onDrawWithContent {
-                                drawContent()
-                                drawRect(gradient, blendMode = BlendMode.Multiply)
-                            }
                         }
-                )
+
+                    }
+                }
+                is TodaysRecipeState.Error -> {}
             }
         }
     }

@@ -45,7 +45,7 @@ class SearchViewModel(
         searchUiState = SearchUiState.Loading
         //Create function connect to internet to get result
         val params = mutableMapOf<String, String>()
-        params["search"] = searchQuery.value
+        params["search"] = searchQuery.value.trim()
 
         try {
             val result = searchRepository.onSearch(params)

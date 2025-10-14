@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 data class SearchResult (
     val id: Int = 0,
     val title: String = "",
+    val description: String = "",
     val thumbnail: String = "",
     val ingredients: String = "",
     val steps: String = "",
@@ -17,6 +18,7 @@ data class SearchResult (
 data class Recipe(
     val id: Int = 0,
     val title: String = "",
+    val description: String = "",
     val thumbnail: String = "",
     val ingredients: List<Ingredient>,
     val steps: List<Step>,

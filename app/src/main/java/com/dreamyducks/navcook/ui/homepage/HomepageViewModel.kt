@@ -37,6 +37,7 @@ class HomepageViewModel(
             _homepageUiState.value = homepageUiState.value.copy(
                 todaysRecipeState = TodaysRecipeState.Success(todaysRecipe),
             )
+            Log.d("MainActivity", "Image id: ${todaysRecipe.thumbnail}")
 
             Log.d("MainActivity", "Getting daily recipe completed")
         } catch(e: Exception) {
