@@ -1,5 +1,7 @@
 package com.dreamyducks.navcook.ui.homepage
 
+import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Search
@@ -20,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
@@ -30,6 +34,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,6 +44,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
@@ -45,6 +53,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
@@ -53,8 +62,9 @@ import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.ui.NavCookViewModel
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
+import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun Homepage(
     innerPadding: PaddingValues,
@@ -66,17 +76,36 @@ fun Homepage(
 ) {
     val context = LocalContext.current
     val homepageUiState by homepageViewModel.homepageUiState.collectAsState()
+    val coroutine = rememberCoroutineScope()
+    var isStartClicked = remember { mutableStateOf(false) }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(dimensionResource(R.dimen.padding_medium))
-            .padding(innerPadding)
     ) {
+        if(isStartClicked.value) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .background(Color.Black.copy(alpha = 0.75f))
+                    .fillMaxSize()
+                    .zIndex(2f)
+                    .pointerInput(Unit) {
+
+                    }
+            ) {
+                ContainedLoadingIndicator(
+                    modifier = modifier
+                        .size(120.dp)
+                )
+            }
+        }
         Column(
             verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
             modifier = modifier
                 .fillMaxWidth()
+                .padding(dimensionResource(R.dimen.padding_medium))
+                .padding(innerPadding)
         ) {
             HelloWord(
                 userName = "UserName"
@@ -90,7 +119,19 @@ fun Homepage(
                     onSearchClick = navigateToSearch
                 )
             }
-            TodaysRecipe(uiState = homepageUiState)
+            TodaysRecipe(
+                uiState = homepageUiState,
+                onStartClick = {
+                    Log.d("MainActivity", "On search by id start")
+                    coroutine.launch {
+                        isStartClicked.value = true
+                        val isSuccess = homepageViewModel.onGetRecipeDetail(id = homepageUiState.todaysRecipeId!!)
+                        if(isSuccess) {
+                            navigateToOverview()
+                        }
+                    }
+                }
+            )
             Spacer(modifier.weight(1f))
             OutlinedButton(
                 onClick = {
@@ -117,16 +158,6 @@ fun Homepage(
             ) {
                 Text("stop text to speech")
             }
-        }
-        Column(
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
-            modifier = modifier
-                .fillMaxWidth()
-        ) {
-
-            //Today's recipe
-
-
         }
     }
 }
@@ -182,9 +213,11 @@ fun Search(
 @Composable
 private fun TodaysRecipe(
     uiState: HomepageUiState,
+    onStartClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val recipeState = uiState.todaysRecipeState
+    var isButtonEnable = remember { mutableStateOf(true) }
 
     Card(
         shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
@@ -240,10 +273,14 @@ private fun TodaysRecipe(
                         contentScale = ContentScale.Crop,
                         modifier = modifier
                             .fillMaxWidth()
-                            .aspectRatio(4f/3f)
+                            .aspectRatio(4f / 3f)
                             .drawWithCache {
                                 val gradient = Brush.verticalGradient(
-                                    colors = listOf(Color.Transparent, Color.Transparent, Color.Black),
+                                    colors = listOf(
+                                        Color.Transparent,
+                                        Color.Transparent,
+                                        Color.Black
+                                    ),
                                     startY = size.height / 5,
                                     endY = size.height
                                 )
@@ -255,18 +292,32 @@ private fun TodaysRecipe(
                             .clip(RoundedCornerShape(dimensionResource(R.dimen.padding_large)))
                     )
 
-                    Row(
+                    Column(
                         modifier = modifier
                             .padding(dimensionResource(R.dimen.padding_medium))
                     ) {
-                        Button(
-                            onClick = {}
+                        Text(
+                            text = uiState.todaysRecipeState.recipe.title,
+                            maxLines = 1,
+                            fontSize = 28.sp.nonScaledSp,
+                            style = MaterialTheme.typography.headlineLarge,
+                            color = Color.White
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Text(
-                                "Start"
-                            )
+                            Button(
+                                onClick = {
+                                    onStartClick()
+                                    isButtonEnable.value = false
+                                },
+                                enabled = isButtonEnable.value
+                            ) {
+                                Text(
+                                    "Start"
+                                )
+                            }
                         }
-
                     }
                 }
                 is TodaysRecipeState.Error -> {}

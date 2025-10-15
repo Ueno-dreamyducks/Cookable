@@ -8,18 +8,21 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dreamyducks.navcook.NavCookApplication
+import com.dreamyducks.navcook.data.RecipeManager
 import com.dreamyducks.navcook.data.SearchRepository
 import com.dreamyducks.navcook.network.Recipe
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 class HomepageViewModel(
     private val searchRepository: SearchRepository
 ) : ViewModel() {
+    private val recipeManager = RecipeManager
     private val _homepageUiState = MutableStateFlow(HomepageUiState())
-    val homepageUiState : StateFlow<HomepageUiState> = _homepageUiState.asStateFlow()
+    val homepageUiState: StateFlow<HomepageUiState> = _homepageUiState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -36,16 +39,37 @@ class HomepageViewModel(
 
             _homepageUiState.value = homepageUiState.value.copy(
                 todaysRecipeState = TodaysRecipeState.Success(todaysRecipe),
+                todaysRecipeId = todaysRecipe.id
             )
             Log.d("MainActivity", "Image id: ${todaysRecipe.thumbnail}")
 
             Log.d("MainActivity", "Getting daily recipe completed")
-        } catch(e: Exception) {
+        } catch (e: Exception) {
             Log.e("MainActivity", "error: $e at ${e.stackTrace}")
             _homepageUiState.value = homepageUiState.value.copy(
                 todaysRecipeState = TodaysRecipeState.Error
             )
         }
+    }
+
+    suspend fun onGetRecipeDetail(
+        id: Int
+    ): Boolean {
+        val params = mutableMapOf<String, String>()
+        params["recipeId"] = id.toString()
+
+        try {
+            val result = searchRepository.getRecipe(params)
+            recipeManager.updateSelectedRecipe(result)
+
+            return true
+        } catch (e: IOException) {
+            return false
+        } catch (e: Exception) {
+            Log.e("MainActivity", e.toString())
+            return false
+        }
+
     }
 
     companion object {
@@ -65,7 +89,7 @@ data class HomepageUiState(
 )
 
 sealed interface TodaysRecipeState {
-    object Loading: TodaysRecipeState
+    object Loading : TodaysRecipeState
     data class Success(val recipe: Recipe) : TodaysRecipeState
     object Error : TodaysRecipeState
 }
