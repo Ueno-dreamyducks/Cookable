@@ -1,6 +1,5 @@
 package com.dreamyducks.navcook.ui.homepage
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,7 +61,6 @@ import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.ui.NavCookViewModel
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -122,14 +120,8 @@ fun Homepage(
             TodaysRecipe(
                 uiState = homepageUiState,
                 onStartClick = {
-                    Log.d("MainActivity", "On search by id start")
-                    coroutine.launch {
-                        isStartClicked.value = true
-                        val isSuccess = homepageViewModel.onGetRecipeDetail(id = homepageUiState.todaysRecipeId!!)
-                        if(isSuccess) {
-                            navigateToOverview()
-                        }
-                    }
+                    homepageViewModel.onGetRecipeDetail()
+                    navigateToOverview()
                 }
             )
             Spacer(modifier.weight(1f))
@@ -278,10 +270,10 @@ private fun TodaysRecipe(
                                 val gradient = Brush.verticalGradient(
                                     colors = listOf(
                                         Color.Transparent,
-                                        Color.Transparent,
+                                        Color.Black.copy(alpha = 0.5f),
                                         Color.Black
                                     ),
-                                    startY = size.height / 5,
+                                    startY = size.height / 7,
                                     endY = size.height
                                 )
                                 onDrawWithContent {

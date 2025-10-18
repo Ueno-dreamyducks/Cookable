@@ -6,11 +6,13 @@ import android.util.Log
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,9 +25,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -53,6 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -128,7 +133,11 @@ fun RecipeOverviewScreen(
                     .padding(dimensionResource(R.dimen.padding_medium))
                     .padding(bottom = controlHeight)
             ) {
-                Description(recipe = recipe.value)
+                Info(recipe = recipe.value)
+                Spacer(modifier.padding(bottom = dimensionResource(R.dimen.padding_small)))
+                if(recipe.value!!.description.isNotEmpty()) {
+                    Description(recipe = recipe.value)
+                }
                 Ingredients(
                     recipe = recipe.value
                 )
@@ -230,8 +239,12 @@ private fun BigPicture(
                 .aspectRatio(1f)
                 .drawWithCache {
                     val gradient = Brush.verticalGradient(
-                        colors = listOf(Color.Transparent, Color.Black),
-                        startY = size.height / 10,
+                        colors = listOf(
+                            Color.Transparent,
+                            Color.Black.copy(alpha = 0.5f),
+                            Color.Black
+                        ),
+                        startY = size.height / 3,
                         endY = size.height
                     )
                     onDrawWithContent {
@@ -262,6 +275,48 @@ private fun BigPicture(
     }
 }
 
+@Composable
+private fun Info(
+    recipe: Recipe?,
+    modifier: Modifier = Modifier
+) {
+    val tags = recipe!!.tags.split("\\")
+    val scrollState = rememberScrollState()
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+        modifier = modifier
+            .fillMaxWidth()
+            .horizontalScroll(scrollState)
+    ) {
+        for(tag in tags) {
+            Card(
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = modifier
+                        .padding(horizontal = dimensionResource(R.dimen.padding_small))
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.Label,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        contentDescription = null
+                    )
+                    Text(
+                        text = tag,
+                        fontSize = 12.sp.nonScaledSp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+
+            }
+        }
+
+    }
+}
 @Composable
 private fun Description(
     recipe: Recipe?,
@@ -316,7 +371,6 @@ private fun Ingredients(
     Text(
         text = stringResource(R.string.ingredients),
         fontSize = 28.sp.nonScaledSp,
-
         style = MaterialTheme.typography.titleLarge
     )
 

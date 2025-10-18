@@ -1,6 +1,5 @@
 package com.dreamyducks.navcook.ui.homepage
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.io.IOException
 
 class HomepageViewModel(
     private val searchRepository: SearchRepository
@@ -41,35 +39,17 @@ class HomepageViewModel(
                 todaysRecipeState = TodaysRecipeState.Success(todaysRecipe),
                 todaysRecipeId = todaysRecipe.id
             )
-            Log.d("MainActivity", "Image id: ${todaysRecipe.thumbnail}")
-
-            Log.d("MainActivity", "Getting daily recipe completed")
         } catch (e: Exception) {
-            Log.e("MainActivity", "error: $e at ${e.stackTrace}")
             _homepageUiState.value = homepageUiState.value.copy(
                 todaysRecipeState = TodaysRecipeState.Error
             )
         }
     }
 
-    suspend fun onGetRecipeDetail(
-        id: Int
-    ): Boolean {
-        val params = mutableMapOf<String, String>()
-        params["recipeId"] = id.toString()
-
-        try {
-            val result = searchRepository.getRecipe(params)
-            recipeManager.updateSelectedRecipe(result)
-
-            return true
-        } catch (e: IOException) {
-            return false
-        } catch (e: Exception) {
-            Log.e("MainActivity", e.toString())
-            return false
+    fun onGetRecipeDetail() {
+        if(homepageUiState.value.todaysRecipeState is TodaysRecipeState.Success) {
+            recipeManager.updateSelectedRecipe((homepageUiState.value.todaysRecipeState as TodaysRecipeState.Success).recipe)
         }
-
     }
 
     companion object {
