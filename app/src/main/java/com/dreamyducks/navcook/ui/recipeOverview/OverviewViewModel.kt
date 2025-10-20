@@ -9,5 +9,9 @@ class OverviewViewModel() : ViewModel() {
     private val recipeManager = RecipeManager
 
     val recipe: StateFlow<Recipe?> = recipeManager.selectedRecipe
+
+    init {
+        recipeManager.addLoadedRecipes(recipe.value!!)
+    }
 }
 

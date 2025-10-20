@@ -32,13 +32,22 @@ class SearchResultViewModel(
         id: Int,
     ) {
         updateScreen(SearchResultScreen.LoadingRecipe) //show loading screen on app
-        //Create database access to search id
-        val params = mutableMapOf<String, String>()
-        params["recipeId"] = id.toString()
-        Log.d("MainActivity", params.toString())
-        val result = searchRepository.getRecipe(params)
-        Log.d("MainActivity", result.toString());
-        recipeManager.updateSelectedRecipe(result)
+
+        val loadedRecipes = recipeManager.loadedRecipes
+
+        val recipeOrNull = loadedRecipes.value.getOrDefault(id, null)
+
+        if(recipeOrNull == null) { //recipe was not loaded yet
+            //Create database access to search id
+            val params = mutableMapOf<String, String>()
+            params["recipeId"] = id.toString()
+            Log.d("MainActivity", params.toString())
+            val result = searchRepository.getRecipe(params)
+            Log.d("MainActivity", result.toString());
+            recipeManager.updateSelectedRecipe(result)
+        } else { //the recipe already loaded on recipeManager
+            recipeManager.updateSelectedRecipe(recipeOrNull)
+        }
     }
 
     companion object {

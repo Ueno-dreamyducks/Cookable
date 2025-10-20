@@ -1,8 +1,12 @@
 package com.dreamyducks.navcook.ui.recipeViewer
 
+import android.Manifest
 import android.app.Activity
 import android.view.WindowManager
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -92,6 +96,9 @@ import com.dreamyducks.navcook.R
 import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.network.Recipe
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -307,6 +314,7 @@ sealed interface ToolMenuState {
     object Menu : ToolMenuState
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun OverlayControl(
     modifier: Modifier = Modifier,
@@ -316,7 +324,14 @@ private fun OverlayControl(
     overlayHeight: (Dp) -> Unit,
     onShowExitDialog: () -> Unit,
 ) {
+    val context = LocalContext.current
+
     val viewerUiState = viewModel.viewerUiState.collectAsState()
+
+    val micPermissionGranted = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) {}
 
     val micColor by animateColorAsState(
         targetValue = if (viewerUiState.value.isMicOn) MaterialTheme.colorScheme.onPrimary else LocalContentColor.current,
@@ -472,11 +487,25 @@ private fun OverlayControl(
                 }
                 IconButton(
                     onClick = {
-                        viewModel.updateViewerUiState(
-                            viewerUiState.value.copy(
-                                isMicOn = !viewerUiState.value.isMicOn
-                            )
-                        )
+                        when (micPermissionGranted.status) {
+                            is PermissionStatus.Granted -> {
+                                viewModel.updateViewerUiState(
+                                    viewerUiState.value.copy(
+                                        isMicOn = !viewerUiState.value.isMicOn
+                                    )
+                                )
+                                viewModel.initVosk(context)
+                            }
+
+                            is PermissionStatus.Denied -> {
+                                requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                Toast.makeText(
+                                    context,
+                                    "Click Mic icon again to enable",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        }
                     },
                     modifier = modifier
                         .clip(RoundedCornerShape(50.dp))
@@ -789,6 +818,6 @@ fun RecipeViewerPreview() {
 @Composable
 private fun ExitDialogPreview() {
     NavCookTheme {
-        ExitDialog({},{})
+        ExitDialog({}, {})
     }
 }

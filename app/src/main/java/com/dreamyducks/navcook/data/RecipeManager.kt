@@ -15,6 +15,9 @@ object RecipeManager {
     private val _selectedRecipe = MutableStateFlow<Recipe?>(null)
     val selectedRecipe: StateFlow<Recipe?> = _selectedRecipe.asStateFlow()
 
+    private val _loadedRecipes = MutableStateFlow<Map<Int, Recipe>>(mapOf())
+    val loadedRecipes : StateFlow<Map<Int, Recipe>> = _loadedRecipes.asStateFlow()
+
     fun updateSearchQuery(newQuery: String) {
         _searchQuery.value = newQuery
     }
@@ -24,5 +27,9 @@ object RecipeManager {
 
     fun updateSelectedRecipe(newSelect: Recipe) {
         _selectedRecipe.value = newSelect
+    }
+
+    fun addLoadedRecipes(recipe: Recipe) {
+        _loadedRecipes.value = _loadedRecipes.value + (recipe.id to recipe)
     }
 }
