@@ -14,8 +14,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.SavedSearch
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
@@ -48,6 +51,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -57,6 +61,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
+import com.dreamyducks.navcook.data.Query
 import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.ui.NavCookViewModel
@@ -76,12 +81,14 @@ fun Homepage(
     val homepageUiState by homepageViewModel.homepageUiState.collectAsState()
     val coroutine = rememberCoroutineScope()
     var isStartClicked = remember { mutableStateOf(false) }
+    val queries by homepageViewModel.queriesState.collectAsState()
+    val uniqueQueries = queries.distinctBy { it.query }
 
     Box(
         modifier = modifier
             .fillMaxSize()
     ) {
-        if(isStartClicked.value) {
+        if (isStartClicked.value) {
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
@@ -104,9 +111,10 @@ fun Homepage(
                 .fillMaxWidth()
                 .padding(dimensionResource(R.dimen.padding_medium))
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
         ) {
             HelloWord(
-                userName = "UserName"
+                userName = "User"
             )
             Box(
                 modifier = modifier
@@ -123,6 +131,9 @@ fun Homepage(
                     homepageViewModel.onGetRecipeDetail()
                     navigateToOverview()
                 }
+            )
+            RecentSearch(
+                queries = uniqueQueries
             )
             Spacer(modifier.weight(1f))
             OutlinedButton(
@@ -241,6 +252,7 @@ private fun TodaysRecipe(
                         )
                     }
                 }
+
                 is TodaysRecipeState.Success -> {
                     SubcomposeAsyncImage(
                         model = ImageRequest.Builder(context = LocalContext.current)
@@ -312,7 +324,52 @@ private fun TodaysRecipe(
                         }
                     }
                 }
+
                 is TodaysRecipeState.Error -> {}
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentSearch(
+    queries: List<Query>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = stringResource(R.string.recent_search),
+            style = MaterialTheme.typography.titleMedium,
+            fontSize = 28.sp.nonScaledSp,
+            modifier = modifier
+                .padding(dimensionResource(R.dimen.padding_medium))
+        )
+        for (query in queries) {
+            Card(
+                shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                ),
+                modifier = modifier
+                    .padding(dimensionResource(R.dimen.padding_small))
+                    .fillMaxWidth()
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = modifier
+                        .padding(dimensionResource(R.dimen.padding_small))
+                ) {
+                    Icon(imageVector = Icons.Default.SavedSearch, null)
+                    Text(
+                        text = query.query,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
             }
         }
     }

@@ -346,7 +346,7 @@ private fun Info(
                     contentDescription = null
                 )
                 Text(
-                    text = "10" + " mins",
+                    text = recipe.time.toString() + " mins",
                     fontSize = 12.sp.nonScaledSp,
                     fontWeight = FontWeight.Bold,
                 )

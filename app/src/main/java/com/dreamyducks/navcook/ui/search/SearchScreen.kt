@@ -21,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.SavedSearch
 import androidx.compose.material.icons.filled.SignalWifiOff
 import androidx.compose.material.icons.outlined.Dangerous
 import androidx.compose.material.icons.outlined.Search
@@ -104,6 +105,7 @@ fun SearchScreen(
             is SearchUiState.Success -> {
                 onNavigateToSearchResult()
             }
+
             is SearchUiState.NoInternet -> {
                 NoInternet(
                     onSearch = {
@@ -113,6 +115,7 @@ fun SearchScreen(
                     }
                 )
             }
+
             is SearchUiState.Error -> {
                 Error(
                     onSearch = {
@@ -199,6 +202,9 @@ private fun SearchSection(
 ) {
     val searchQuery = searchViewModel.searchQuery.collectAsState()
 
+    val history = searchViewModel.queriesState.collectAsState()
+    val uniqueQueries = history.value.distinctBy { it.query }
+
     var isFocused by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
@@ -249,28 +255,50 @@ private fun SearchSection(
             )
         )
         if (isFocused) { //Show recent searches
-            //if (viewModel.recentSearch()) { //check if recent search present
-
-            //} else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(dimensionResource(R.dimen.padding_large))
-            ) {
-                Icon(
-                    imageVector = Icons.Default.History,
-                    contentDescription = null,
+            if (history.value.isNotEmpty()) { //check if recent search present
+                for(query in uniqueQueries) {
+                    Row(
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .clickable(
+                                onClick = {
+                                    searchViewModel.updateSearchQuery(query.query)
+                                    onSearch()
+                                }
+                            )
+                            .padding(
+                                horizontal = dimensionResource(R.dimen.padding_medium),
+                                vertical = dimensionResource(R.dimen.padding_small)
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(Icons.Default.SavedSearch, null)
+                        Text(
+                            text = query.query
+                        )
+                    }
+                }
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
                     modifier = modifier
-                        .size(40.dp)
-                )
-                Text(
-                    text = stringResource(R.string.no_recent_search),
-                    fontSize = 20.sp
-                )
+                        .fillMaxSize()
+                        .padding(dimensionResource(R.dimen.padding_large))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = null,
+                        modifier = modifier
+                            .size(40.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.no_recent_search),
+                        fontSize = 20.sp
+                    )
+                }
             }
-            //}
         }
     }
 }
@@ -384,7 +412,10 @@ private fun NoInternet(
             .padding(horizontal = dimensionResource(R.dimen.padding_small))
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_medium), Alignment.CenterVertically),
+            verticalArrangement = Arrangement.spacedBy(
+                dimensionResource(R.dimen.padding_medium),
+                Alignment.CenterVertically
+            ),
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
                 .fillMaxSize()
@@ -412,6 +443,7 @@ private fun NoInternet(
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 fun NoInternetPreview() {
@@ -432,7 +464,10 @@ private fun Error(
             .padding(horizontal = dimensionResource(R.dimen.padding_small))
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_medium), Alignment.CenterVertically),
+            verticalArrangement = Arrangement.spacedBy(
+                dimensionResource(R.dimen.padding_medium),
+                Alignment.CenterVertically
+            ),
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
                 .fillMaxSize()
@@ -460,6 +495,7 @@ private fun Error(
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchTopAppBar(

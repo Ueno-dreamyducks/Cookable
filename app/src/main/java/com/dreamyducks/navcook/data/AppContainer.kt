@@ -1,5 +1,6 @@
 package com.dreamyducks.navcook.data
 
+import android.content.Context
 import com.dreamyducks.navcook.network.NavCookApiService
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
@@ -8,9 +9,10 @@ import retrofit2.Retrofit
 
 interface AppContainer {
     val searchRepository: SearchRepository
+    val searchQueriesRepository: SearchQueriesRepository
 }
 
-class DefaultAppContainer: AppContainer {
+class DefaultAppContainer(private val context: Context): AppContainer {
     private val BASE_URL =
         "https://script.google.com"
 
@@ -26,5 +28,10 @@ class DefaultAppContainer: AppContainer {
 
     override val searchRepository: SearchRepository by lazy {
         NetworkSearchRepository(retrofitService)
+    }
+
+    //search queries repo.
+    override val searchQueriesRepository: SearchQueriesRepository by lazy {
+        OfflineSearchQueriesRepository(SearchQueriesDatabase.getDatabase(context).searchDao())
     }
 }
