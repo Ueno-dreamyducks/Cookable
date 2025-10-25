@@ -43,5 +43,10 @@
     <string name="exit_recipe">Exit Recipe?</string>
     <string name="cancel">Cancel</string>
     <string name="exit">Exit</string>
+    <string name="camera_permission_needed">Camera permission needed to use Photo Ask</string>
+    <string name="mic_permission_needed">Mic permission needed to use audio commands</string>
+    <string name="you_have_denied">You have denied mic permission</string>
+    <string name="allow_access">Allow Access</string>
+    <string name="go_to_setting">Go to Setting</string>
     <string name="finish">Finish</string>
 </resources>

@@ -65,5 +65,6 @@ val FriedRice_Recipe =
                 ingredients = null,
                 description = "Add toppings to the pan and mix well . Make a space in the center of pan and pour soy sauce."
             )
-        )
+        ),
+        tags = "Fried Rice\\Chinese\\Japanese\\Rice\\Vegetable\\Vegetarian"
     )

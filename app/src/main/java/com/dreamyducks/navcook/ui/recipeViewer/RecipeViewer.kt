@@ -2,11 +2,11 @@ package com.dreamyducks.navcook.ui.recipeViewer
 
 import android.Manifest
 import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.view.WindowManager
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,12 +39,15 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.VolumeUp
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flatware
+import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.Mic
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
@@ -52,6 +56,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -70,6 +75,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -97,8 +103,9 @@ import com.dreamyducks.navcook.format.nonScaledSp
 import com.dreamyducks.navcook.network.Recipe
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionStatus
+import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -312,6 +319,8 @@ sealed interface ToolMenuState {
     object None : ToolMenuState
     object CameraView : ToolMenuState
     object Menu : ToolMenuState
+    object RecordPermission: ToolMenuState
+    object CameraPermission: ToolMenuState
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -328,10 +337,8 @@ private fun OverlayControl(
 
     val viewerUiState = viewModel.viewerUiState.collectAsState()
 
-    val micPermissionGranted = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) {}
+    val micPermissionStatus = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
+    val cameraPermissionStatus = rememberPermissionState(Manifest.permission.CAMERA)
 
     val micColor by animateColorAsState(
         targetValue = if (viewerUiState.value.isMicOn) MaterialTheme.colorScheme.onPrimary else LocalContentColor.current,
@@ -465,21 +472,60 @@ private fun OverlayControl(
                 }
                 IconButton(
                     onClick = {
-                        changeMenuState(
-                            currentState = toolMenuState,
-                            clickedMenuState = ToolMenuState.CameraView,
-                            onShowMenuChange = { it ->
-                                isShowMenu = it
-                            },
-                            newState = { it ->
-                                toolMenuState = it
-                            },
-                            newTitle = { it ->
-                                titleResId = it
+                        if(!cameraPermissionStatus.status.isGranted) {
+                            toolMenuContent = {
+                                PermissionCard(
+                                    icon = Icons.Default.CameraAlt,
+                                    onGrantClick = {
+                                        changeMenuState( // menu
+                                            currentState = toolMenuState,
+                                            clickedMenuState = ToolMenuState.None,
+                                            onShowMenuChange = { it ->
+                                                isShowMenu = false
+                                            },
+                                            newState = { it ->
+                                                toolMenuState = it
+                                            },
+                                            newTitle = { it ->
+                                                titleResId = it
+                                            }
+                                        )
+                                        cameraPermissionStatus.launchPermissionRequest()
+                                    },
+                                    rationale = stringResource(R.string.camera_permission_needed),
+                                    shouldShowRationale = cameraPermissionStatus.status.shouldShowRationale
+                                )
                             }
-                        )
-                        toolMenuContent = {
-                            CameraView()
+                            changeMenuState(
+                                currentState = toolMenuState,
+                                clickedMenuState = ToolMenuState.CameraPermission,
+                                onShowMenuChange = { it ->
+                                    isShowMenu = it
+                                },
+                                newState = { it ->
+                                    toolMenuState = it
+                                },
+                                newTitle = { it ->
+                                    titleResId = it
+                                }
+                            )
+                        } else {
+                            changeMenuState(
+                                currentState = toolMenuState,
+                                clickedMenuState = ToolMenuState.CameraView,
+                                onShowMenuChange = { it ->
+                                    isShowMenu = it
+                                },
+                                newState = { it ->
+                                    toolMenuState = it
+                                },
+                                newTitle = { it ->
+                                    titleResId = it
+                                }
+                            )
+                            toolMenuContent = {
+                                CameraView()
+                            }
                         }
                     }
                 ) {
@@ -487,24 +533,47 @@ private fun OverlayControl(
                 }
                 IconButton(
                     onClick = {
-                        when (micPermissionGranted.status) {
-                            is PermissionStatus.Granted -> {
-                                viewModel.updateViewerUiState(
-                                    viewerUiState.value.copy(
-                                        isMicOn = !viewerUiState.value.isMicOn
-                                    )
+                        if(!micPermissionStatus.status.isGranted) { //show mic permission request
+                            toolMenuContent = {
+                                PermissionCard(
+                                    shouldShowRationale = micPermissionStatus.status.shouldShowRationale,
+                                    rationale = stringResource(R.string.mic_permission_needed),
+                                    icon = Icons.Default.MicOff,
+                                    onGrantClick = {
+                                        changeMenuState(
+                                            currentState = toolMenuState,
+                                            clickedMenuState = ToolMenuState.None,
+                                            onShowMenuChange = { it ->
+                                                isShowMenu = false
+                                            },
+                                            newState = { it ->
+                                                toolMenuState = it
+                                            },
+                                            newTitle = { it ->
+                                                titleResId = it
+                                            }
+                                        )
+                                        micPermissionStatus.launchPermissionRequest()
+                                    },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
                                 )
-                                viewModel.initVosk(context)
                             }
-
-                            is PermissionStatus.Denied -> {
-                                requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                                Toast.makeText(
-                                    context,
-                                    "Click Mic icon again to enable",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                            }
+                            changeMenuState(
+                                currentState = toolMenuState,
+                                clickedMenuState = ToolMenuState.RecordPermission,
+                                onShowMenuChange = { it ->
+                                    isShowMenu = it
+                                },
+                                newState = { it ->
+                                    toolMenuState = it
+                                },
+                                newTitle = { it ->
+                                    titleResId = it
+                                }
+                            )
+                        } else { //Granted
+                            viewModel.initVosk(context)
                         }
                     },
                     modifier = modifier
@@ -734,6 +803,50 @@ private fun Menu(
                 text = stringResource(R.string.quit)
             )
         }
+    }
+}
+
+@Composable
+private fun PermissionCard(
+    shouldShowRationale: Boolean,
+    rationale: String,
+    icon: ImageVector,
+    onGrantClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .padding(horizontal = dimensionResource(R.dimen.padding_large))
+    ) {
+        Icon(icon, null)
+        Spacer(modifier = modifier.padding(dimensionResource(R.dimen.padding_small)))
+        Text(text = rationale);
+        Spacer(modifier = modifier.padding(dimensionResource(R.dimen.padding_small)))
+        if(shouldShowRationale)
+            OutlinedButton(
+                onClick = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                        addCategory(Intent.CATEGORY_DEFAULT)
+                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY)
+                        addFlags(Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS)
+                    }
+                    context.startActivity(intent)
+                }
+            ) {
+                Text(stringResource(R.string.go_to_setting))
+            }
+        else
+            Button(
+                onClick = onGrantClick
+            ) {
+                Text(stringResource(R.string.allow_access))
+            }
     }
 }
 

@@ -27,9 +27,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Label
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -135,7 +137,7 @@ fun RecipeOverviewScreen(
             ) {
                 Info(recipe = recipe.value)
                 Spacer(modifier.padding(bottom = dimensionResource(R.dimen.padding_small)))
-                if(recipe.value!!.description.isNotEmpty()) {
+                if (recipe.value!!.description.isNotEmpty()) {
                     Description(recipe = recipe.value)
                 }
                 Ingredients(
@@ -284,39 +286,75 @@ private fun Info(
     val scrollState = rememberScrollState()
 
     Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+        horizontalArrangement = Arrangement.SpaceBetween,
         modifier = modifier
             .fillMaxWidth()
-            .horizontalScroll(scrollState)
     ) {
-        for(tag in tags) {
-            Card(
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = modifier
-                        .padding(horizontal = dimensionResource(R.dimen.padding_small))
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+            modifier = Modifier
+                .horizontalScroll(scrollState)
+                .weight(1f)
+        ) {
+            for (tag in tags) {
+                Card(
+                    shape = RoundedCornerShape(8.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.Label,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        contentDescription = null
-                    )
-                    Text(
-                        text = tag,
-                        fontSize = 12.sp.nonScaledSp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = modifier
+                            .padding(horizontal = dimensionResource(R.dimen.padding_small))
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Outlined.Label,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            contentDescription = null
+                        )
+                        Text(
+                            text = tag,
+                            fontSize = 12.sp.nonScaledSp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
 
+                }
             }
         }
-
+        Card(
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ),
+            modifier = Modifier
+                .padding(8.dp, 0.dp, 0.dp, 0.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier
+                    .padding(horizontal = dimensionResource(R.dimen.padding_small))
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Timer,
+                    contentDescription = null
+                )
+                Text(
+                    text = "10" + " mins",
+                    fontSize = 12.sp.nonScaledSp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+        }
     }
 }
+
 @Composable
 private fun Description(
     recipe: Recipe?,

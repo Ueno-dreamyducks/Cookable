@@ -1,15 +1,11 @@
 package com.dreamyducks.navcook.ui.recipeViewer
 
-import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -42,8 +38,6 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.dreamyducks.navcook.R
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.PermissionStatus
-import com.google.accompanist.permissions.rememberPermissionState
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -53,17 +47,8 @@ fun CameraView(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var capturedImage by remember { mutableStateOf<Bitmap?>(null)}
+    var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
-    val cameraPermissionGranted = rememberPermissionState(Manifest.permission.CAMERA)
-
-    val requestPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (!isGranted) {
-            Toast.makeText(context, "Camera permission needed", Toast.LENGTH_SHORT).show()
-        }
-    }
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val backCallback = remember {
@@ -81,38 +66,20 @@ fun CameraView(
         }
     }
 
-    LaunchedEffect(Unit) {
-        requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-    }
-
     Box(
         modifier = modifier
             .fillMaxHeight(0.6f)
     ) {
-        when(cameraPermissionGranted.status) {
-            is PermissionStatus.Granted -> {
-                if(capturedImage == null) {
-                    CameraScreen(
-                        context = context,
-                        lifecycleOwner = lifecycleOwner,
-                        onCapture = { bitmap ->
-                            capturedImage = bitmap
-                        }
-                    )
-                } else {
-                    CaptureImageView(capturedImage!!)
+        if (capturedImage == null) {
+            CameraScreen(
+                context = context,
+                lifecycleOwner = lifecycleOwner,
+                onCapture = { bitmap ->
+                    capturedImage = bitmap
                 }
-            }
-
-            is PermissionStatus.Denied -> {
-                Button(
-                    onClick = { requestPermissionLauncher.launch(Manifest.permission.CAMERA) },
-                    modifier = modifier
-                        .align(Alignment.Center)
-                ) {
-                    Text("Allow camera access")
-                }
-            }
+            )
+        } else {
+            CaptureImageView(capturedImage!!)
         }
     }
 }
