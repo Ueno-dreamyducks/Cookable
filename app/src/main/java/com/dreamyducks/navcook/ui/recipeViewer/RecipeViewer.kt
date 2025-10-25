@@ -589,7 +589,11 @@ private fun OverlayControl(
                             toolMenuContent = {
                                 Mic(uiState = viewerUiState.value)
                             }
-                            viewModel.initVosk(context)
+                            if(viewerUiState.value.isMicOn) {
+                                viewModel.pause()
+                            } else {
+                                viewModel.initVosk(context)
+                            }
                         }
                     },
                     modifier = modifier

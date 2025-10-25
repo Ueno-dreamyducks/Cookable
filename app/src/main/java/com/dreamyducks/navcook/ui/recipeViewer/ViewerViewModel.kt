@@ -55,6 +55,8 @@ class ViewerViewModel() : ViewModel() {
         val previousTerm = listOf("back", "go back", "previous", "previous step")
         val recognizer = Recognizer(model, 16000.0f)
 
+        var actionExecuted = false;
+
         speechService = SpeechService(recognizer, 16000.0f)
 
         updateViewerUiState(_viewerUiState.value.copy(isMicOn = true))
@@ -62,23 +64,25 @@ class ViewerViewModel() : ViewModel() {
 
 
             override fun onPartialResult(hypothesis: String?) {
-
                 Log.d("Vosk Partial", hypothesis ?: "")
 
                 // Execute your code inside the check
                 //if (hypothesis?.contains("stop pause", ignoreCase = true) == true )
                 if (stopTerms.any { hypothesis?.contains(it, ignoreCase = true) ?: false }) {
                     pause()
-                } else if (nextTerm.any { hypothesis?.contains(it, ignoreCase = true) ?: false }) {
-
+                } else if (nextTerm.any { hypothesis?.contains(it, ignoreCase = true) ?: false } && !actionExecuted) {
+                    actionExecuted = true
                     updateUiStateIndex(1)
-                } else if (previousTerm.any { hypothesis?.contains(it, ignoreCase = true) ?: false }) {
+                } else if (previousTerm.any { hypothesis?.contains(it, ignoreCase = true) ?: false } && !actionExecuted) {
                     updateUiStateIndex(-1)
+                    actionExecuted = true
                 }
             }
 
             override fun onResult(hypothesis: String?) {
                 Log.d("Vosk", hypothesis ?: "")
+
+                actionExecuted = false
 
                 val json = JSONObject(hypothesis ?: "")
 
@@ -121,6 +125,7 @@ class ViewerViewModel() : ViewModel() {
     }
 
     fun updateUiStateIndex(changeAmount: Int) {
+        Log.d("MainActivity", "update index")
         if(_isCoolDown.value) {
             return
         }
