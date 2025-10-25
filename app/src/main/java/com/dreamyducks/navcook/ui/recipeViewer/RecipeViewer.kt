@@ -318,9 +318,10 @@ fun RecipeViewer(
 sealed interface ToolMenuState {
     object None : ToolMenuState
     object CameraView : ToolMenuState
+    object MicView : ToolMenuState
     object Menu : ToolMenuState
-    object RecordPermission: ToolMenuState
-    object CameraPermission: ToolMenuState
+    object RecordPermission : ToolMenuState
+    object CameraPermission : ToolMenuState
 }
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -351,7 +352,6 @@ private fun OverlayControl(
         animationSpec = tween(300)
     )
 
-    var isShowMenu by remember { mutableStateOf(false) }
     var menuComposableSize by remember { mutableStateOf(Rect.Zero) }
     var toolMenuState: ToolMenuState by remember { mutableStateOf(ToolMenuState.None) }
     var toolMenuContent by remember { mutableStateOf<@Composable () -> Unit>({ Text("Initial Menu") }) } //set composes to show when menu container show up
@@ -361,7 +361,7 @@ private fun OverlayControl(
     var controlHeight by remember { mutableStateOf(0.dp) }
 
     val animatedOverlayRadius by animateDpAsState(
-        targetValue = if (isShowMenu) dimensionResource(R.dimen.padding_medium) else dimensionResource(
+        targetValue = if (viewerUiState.value.isShowMenu) dimensionResource(R.dimen.padding_medium) else dimensionResource(
             R.dimen.padding_extra_large
         ), animationSpec = tween(2000)
     )
@@ -375,8 +375,8 @@ private fun OverlayControl(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { offset: Offset ->
-                        if (isShowMenu && !menuComposableSize.contains(offset)) {
-                            isShowMenu = false
+                        if (viewerUiState.value.isShowMenu && !menuComposableSize.contains(offset)) {
+                            viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = false))
                             toolMenuState = ToolMenuState.None
                         }
                     }
@@ -384,7 +384,7 @@ private fun OverlayControl(
             }
     ) {
         AnimatedVisibility( //expanded menu
-            isShowMenu,
+            viewerUiState.value.isShowMenu,
             enter = slideInVertically {
                 with(density) { 40.dp.roundToPx() }
             } + fadeIn(),
@@ -420,7 +420,7 @@ private fun OverlayControl(
                         changeMenuState(
                             currentState = toolMenuState,
                             onShowMenuChange = { it ->
-                                isShowMenu = it
+                                viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
                             },
                             newState = { it ->
                                 toolMenuState = it
@@ -472,7 +472,7 @@ private fun OverlayControl(
                 }
                 IconButton(
                     onClick = {
-                        if(!cameraPermissionStatus.status.isGranted) {
+                        if (!cameraPermissionStatus.status.isGranted) {
                             toolMenuContent = {
                                 PermissionCard(
                                     icon = Icons.Default.CameraAlt,
@@ -481,7 +481,7 @@ private fun OverlayControl(
                                             currentState = toolMenuState,
                                             clickedMenuState = ToolMenuState.None,
                                             onShowMenuChange = { it ->
-                                                isShowMenu = false
+                                                viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = false))
                                             },
                                             newState = { it ->
                                                 toolMenuState = it
@@ -500,7 +500,7 @@ private fun OverlayControl(
                                 currentState = toolMenuState,
                                 clickedMenuState = ToolMenuState.CameraPermission,
                                 onShowMenuChange = { it ->
-                                    isShowMenu = it
+                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
                                 },
                                 newState = { it ->
                                     toolMenuState = it
@@ -514,7 +514,7 @@ private fun OverlayControl(
                                 currentState = toolMenuState,
                                 clickedMenuState = ToolMenuState.CameraView,
                                 onShowMenuChange = { it ->
-                                    isShowMenu = it
+                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
                                 },
                                 newState = { it ->
                                     toolMenuState = it
@@ -533,7 +533,7 @@ private fun OverlayControl(
                 }
                 IconButton(
                     onClick = {
-                        if(!micPermissionStatus.status.isGranted) { //show mic permission request
+                        if (!micPermissionStatus.status.isGranted) { //show mic permission request
                             toolMenuContent = {
                                 PermissionCard(
                                     shouldShowRationale = micPermissionStatus.status.shouldShowRationale,
@@ -544,7 +544,7 @@ private fun OverlayControl(
                                             currentState = toolMenuState,
                                             clickedMenuState = ToolMenuState.None,
                                             onShowMenuChange = { it ->
-                                                isShowMenu = false
+                                                viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = false))
                                             },
                                             newState = { it ->
                                                 toolMenuState = it
@@ -563,7 +563,7 @@ private fun OverlayControl(
                                 currentState = toolMenuState,
                                 clickedMenuState = ToolMenuState.RecordPermission,
                                 onShowMenuChange = { it ->
-                                    isShowMenu = it
+                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
                                 },
                                 newState = { it ->
                                     toolMenuState = it
@@ -573,6 +573,22 @@ private fun OverlayControl(
                                 }
                             )
                         } else { //Granted
+                            changeMenuState(
+                                currentState = toolMenuState,
+                                clickedMenuState = ToolMenuState.MicView,
+                                onShowMenuChange = { it ->
+                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
+                                },
+                                newState = { it ->
+                                    toolMenuState = it
+                                },
+                                newTitle = { it ->
+                                    titleResId = it
+                                }
+                            )
+                            toolMenuContent = {
+                                Mic(uiState = viewerUiState.value)
+                            }
                             viewModel.initVosk(context)
                         }
                     },
@@ -602,7 +618,7 @@ private fun OverlayControl(
                             clickedMenuState = ToolMenuState.Menu,
                             clickedStateTitleResId = R.string.menu,
                             onShowMenuChange = { it ->
-                                isShowMenu = it
+                                viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
                             },
                             newState = { it ->
                                 toolMenuState = it
@@ -725,6 +741,19 @@ private fun ToolMenu(
 }
 
 @Composable
+private fun Mic(
+    uiState: ViewerUiState,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Text(uiState.transcript)
+    }
+}
+
+@Composable
 private fun Menu(
     viewModel: ViewerViewModel,
     viewerUiState: State<ViewerUiState>,
@@ -736,7 +765,7 @@ private fun Menu(
     LaunchedEffect(Unit) {
         while (true) {
             val calendar = Calendar.getInstance()
-            val format = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+            val format = SimpleDateFormat("HH:mm:ss a", Locale.getDefault())
             currentTime = format.format(calendar.time)
             delay(1000)
         }
@@ -826,7 +855,7 @@ private fun PermissionCard(
         Spacer(modifier = modifier.padding(dimensionResource(R.dimen.padding_small)))
         Text(text = rationale);
         Spacer(modifier = modifier.padding(dimensionResource(R.dimen.padding_small)))
-        if(shouldShowRationale)
+        if (shouldShowRationale)
             OutlinedButton(
                 onClick = {
                     val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {

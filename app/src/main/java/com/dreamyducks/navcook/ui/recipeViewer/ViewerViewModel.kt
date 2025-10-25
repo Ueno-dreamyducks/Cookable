@@ -3,16 +3,18 @@ package com.dreamyducks.navcook.ui.recipeViewer
 import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dreamyducks.navcook.data.RecipeManager
 import com.dreamyducks.navcook.network.Recipe
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import org.vosk.Model
 import org.vosk.Recognizer
 import org.vosk.android.RecognitionListener
@@ -30,6 +32,9 @@ class ViewerViewModel() : ViewModel() {
     private var model: Model? = null
     private var speechService: SpeechService? = null
 
+    private val _isCoolDown = MutableStateFlow(false)
+    private var isCoolDown: StateFlow<Boolean> = _isCoolDown.asStateFlow()
+
     fun initVosk(context: Context) {
         StorageService.unpack(
             context, "vosk-model-small-en-us-0.15", "model",
@@ -43,26 +48,47 @@ class ViewerViewModel() : ViewModel() {
             }
         )
     }
+
     private fun startListening(context: Context) {
+        val stopTerms = listOf("stop", "pause")
+        val nextTerm = listOf("next step", "next")
+        val previousTerm = listOf("back", "go back", "previous", "previous step")
         val recognizer = Recognizer(model, 16000.0f)
 
         speechService = SpeechService(recognizer, 16000.0f)
 
+        updateViewerUiState(_viewerUiState.value.copy(isMicOn = true))
         speechService?.startListening(object : RecognitionListener {
+
 
             override fun onPartialResult(hypothesis: String?) {
 
                 Log.d("Vosk Partial", hypothesis ?: "")
 
                 // Execute your code inside the check
-                if ("".any{ hypothesis?.contains(it, ignoreCase = true) == true })
-                {
-                    Toast.makeText(context, " Request Word detected", Toast.LENGTH_SHORT).show()
+                //if (hypothesis?.contains("stop pause", ignoreCase = true) == true )
+                if (stopTerms.any { hypothesis?.contains(it, ignoreCase = true) ?: false }) {
                     pause()
+                } else if (nextTerm.any { hypothesis?.contains(it, ignoreCase = true) ?: false }) {
+
+                    updateUiStateIndex(1)
+                } else if (previousTerm.any { hypothesis?.contains(it, ignoreCase = true) ?: false }) {
+                    updateUiStateIndex(-1)
                 }
             }
 
-            override fun onResult(hypothesis: String?) {}
+            override fun onResult(hypothesis: String?) {
+                Log.d("Vosk", hypothesis ?: "")
+
+                val json = JSONObject(hypothesis ?: "")
+
+                updateViewerUiState(
+                    viewerUiState.value.copy(
+                        transcript = json.getString("text")
+                    )
+                )
+            }
+
             override fun onFinalResult(hypothesis: String?) {}
             override fun onError(e: Exception?) {
                 Log.e("VoskError", e.toString())
@@ -71,12 +97,23 @@ class ViewerViewModel() : ViewModel() {
             override fun onTimeout() {}
         })
     }
+
     fun pause() {
-        speechService?.stop()
-        speechService?.shutdown()
-        speechService = null
-        //isRunning = false
-        Log.d("Voice Recognition", "Paused")
+        viewModelScope.launch(Dispatchers.Default) {
+            updateViewerUiState(
+                _viewerUiState.value.copy(
+                    isMicOn = false,
+                    transcript = "",
+                    isShowMenu = false
+                )
+            )
+
+            speechService?.stop()
+            speechService?.shutdown()
+            speechService = null
+            //isRunning = false
+            Log.d("Voice Recognition", "Paused")
+        }
     }
 
     fun updateViewerUiState(newState: ViewerUiState) {
@@ -84,12 +121,25 @@ class ViewerViewModel() : ViewModel() {
     }
 
     fun updateUiStateIndex(changeAmount: Int) {
-        _viewerUiState.value = viewerUiState.value.copy(
-            currentIndex = viewerUiState.value.currentIndex + changeAmount
-        )
+        if(_isCoolDown.value) {
+            return
+        }
+        viewModelScope.launch {
+            _isCoolDown.update { true }
+
+            if(viewerUiState.value.currentIndex + changeAmount >= 0 && viewerUiState.value.currentIndex + changeAmount < viewerUiState.value.size + 1) {
+                _viewerUiState.update { current ->
+                    current.copy(currentIndex = current.currentIndex + changeAmount)
+                }
+            }
+
+            delay(1000)
+            _isCoolDown.update { false }
+        }
     }
 
-    private var textToSpeech: TextToSpeech? = null
+    private
+    var textToSpeech: TextToSpeech? = null
     fun textToSpeech(
         context: Context,
         text: String = "Text to speech",
@@ -126,7 +176,9 @@ data class ViewerUiState(
     val currentIndex: Int = 0,
     val size: Int = 0,
     val audioScript: String = "",
+    val isShowMenu: Boolean = false,
     val isReadAround: Boolean = false,
     val isMicOn: Boolean = false,
-    val isShowStatusBar: Boolean = false
+    val isShowStatusBar: Boolean = false,
+    val transcript: String = "",
 )
