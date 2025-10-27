@@ -14,14 +14,18 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,6 +48,8 @@ import java.util.concurrent.Executors
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraView(
+    viewerViewModel: ViewerViewModel,
+    onCapture: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -68,7 +74,6 @@ fun CameraView(
 
     Box(
         modifier = modifier
-            .fillMaxHeight(0.6f)
     ) {
         if (capturedImage == null) {
             CameraScreen(
@@ -79,7 +84,11 @@ fun CameraView(
                 }
             )
         } else {
-            CaptureImageView(capturedImage!!)
+            viewerViewModel.updateAskableInput(capturedImage!!)
+            onCapture()
+            AnswerView(
+                viewerViewModel
+            )
         }
     }
 }
@@ -91,7 +100,7 @@ private fun CameraScreen(
     onCapture: (Bitmap) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
+    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }//{ ProcessCameraProvider.getInstance(context) }
     var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     var preview by remember { mutableStateOf<androidx.camera.core.Preview?>(null) }
@@ -193,6 +202,34 @@ private fun captureImage(
             }
         }
     )
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun AnswerView(
+    viewModel: ViewerViewModel,
+    modifier: Modifier = Modifier
+) {
+    val viewerUiState = viewModel.viewerUiState.collectAsState()
+    if(viewerUiState.value.askableRes.isEmpty()) { //show loading
+        Box(
+            modifier = modifier
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularWavyProgressIndicator(
+            )
+        }
+    } else { //answer available
+        Column(
+            modifier = modifier
+                .padding(vertical = dimensionResource(R.dimen.padding_medium))
+        ) {
+            Text(
+                viewerUiState.value.askableRes
+            )
+        }
+    }
 }
 
 @Composable

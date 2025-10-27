@@ -11,9 +11,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dreamyducks.navcook.NavCookApplication
-import com.dreamyducks.navcook.data.Query
+import com.dreamyducks.navcook.data.database.searchQueries.Query
 import com.dreamyducks.navcook.data.RecipeManager
-import com.dreamyducks.navcook.data.SearchQueriesRepository
+import com.dreamyducks.navcook.data.database.searchQueries.SearchQueriesRepository
 import com.dreamyducks.navcook.data.SearchRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow

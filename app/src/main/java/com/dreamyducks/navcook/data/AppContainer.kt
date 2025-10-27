@@ -1,6 +1,12 @@
 package com.dreamyducks.navcook.data
 
 import android.content.Context
+import com.dreamyducks.navcook.data.database.recentRecipes.OfflineRecentRecipesRepository
+import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipesDatabase
+import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipesRepository
+import com.dreamyducks.navcook.data.database.searchQueries.OfflineSearchQueriesRepository
+import com.dreamyducks.navcook.data.database.searchQueries.SearchQueriesDatabase
+import com.dreamyducks.navcook.data.database.searchQueries.SearchQueriesRepository
 import com.dreamyducks.navcook.network.NavCookApiService
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
@@ -10,6 +16,7 @@ import retrofit2.Retrofit
 interface AppContainer {
     val searchRepository: SearchRepository
     val searchQueriesRepository: SearchQueriesRepository
+    val recentRecipeRepository: RecentRecipesRepository
 }
 
 class DefaultAppContainer(private val context: Context): AppContainer {
@@ -33,5 +40,9 @@ class DefaultAppContainer(private val context: Context): AppContainer {
     //search queries repo.
     override val searchQueriesRepository: SearchQueriesRepository by lazy {
         OfflineSearchQueriesRepository(SearchQueriesDatabase.getDatabase(context).searchDao())
+    }
+
+    override val recentRecipeRepository: RecentRecipesRepository by lazy {
+        OfflineRecentRecipesRepository(RecentRecipesDatabase.getDatabase(context).recentRecipeDao())
     }
 }

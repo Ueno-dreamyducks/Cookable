@@ -1,4 +1,4 @@
-package com.dreamyducks.navcook.data
+package com.dreamyducks.navcook.data.database.searchQueries
 
 import androidx.room.Dao
 import androidx.room.Delete

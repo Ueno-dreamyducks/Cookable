@@ -8,11 +8,15 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dreamyducks.navcook.NavCookApplication
-import com.dreamyducks.navcook.data.Query
+import com.dreamyducks.navcook.data.database.searchQueries.Query
 import com.dreamyducks.navcook.data.RecipeManager
-import com.dreamyducks.navcook.data.SearchQueriesRepository
+import com.dreamyducks.navcook.data.database.searchQueries.SearchQueriesRepository
 import com.dreamyducks.navcook.data.SearchRepository
+import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipe
+import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipesRepository
+import com.dreamyducks.navcook.network.Ingredient
 import com.dreamyducks.navcook.network.Recipe
+import com.dreamyducks.navcook.network.Step
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,7 +29,8 @@ import kotlinx.coroutines.withContext
 
 class HomepageViewModel(
     private val searchRepository: SearchRepository,
-    private val searchQueriesRepository: SearchQueriesRepository
+    private val searchQueriesRepository: SearchQueriesRepository,
+    private val recentRecipesRepository: RecentRecipesRepository,
 ) : ViewModel() {
     private val recipeManager = RecipeManager
     private val _homepageUiState = MutableStateFlow(HomepageUiState())
@@ -37,6 +42,14 @@ class HomepageViewModel(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
                 initialValue = listOf(Query(0, ""))
+            )
+
+    val recentRecipesState: StateFlow<List<RecentRecipe>> =
+        recentRecipesRepository.getAllRecentRecipesStream().map { it }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000L),
+                initialValue = listOf(RecentRecipe())
             )
 
     init {
@@ -78,7 +91,8 @@ class HomepageViewModel(
                 val application = (this[APPLICATION_KEY] as NavCookApplication)
                 val searchRepository = application.container.searchRepository
                 val queriesRepository = application.container.searchQueriesRepository
-                HomepageViewModel(searchRepository = searchRepository, searchQueriesRepository = queriesRepository)
+                val recentRecipesRepository = application.container.recentRecipeRepository
+                HomepageViewModel(searchRepository = searchRepository, searchQueriesRepository = queriesRepository, recentRecipesRepository = recentRecipesRepository)
             }
         }
     }

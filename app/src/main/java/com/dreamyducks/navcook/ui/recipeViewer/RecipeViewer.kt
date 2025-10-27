@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -174,6 +175,8 @@ fun RecipeViewer(
         onDispose { //Disable hide status bars and keep screen on when the compose disposed
             insetsController.show(WindowInsetsCompat.Type.statusBars())
             window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+            viewModel.pause() //stop vosk voice recognition
         }
     }
 
@@ -337,6 +340,7 @@ private fun OverlayControl(
     val context = LocalContext.current
 
     val viewerUiState = viewModel.viewerUiState.collectAsState()
+    val recipe = viewModel.recipe.collectAsState()
 
     val micPermissionStatus = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
     val cameraPermissionStatus = rememberPermissionState(Manifest.permission.CAMERA)
@@ -471,6 +475,7 @@ private fun OverlayControl(
                     Icon(Icons.AutoMirrored.Default.ArrowBack, null)
                 }
                 IconButton(
+                    enabled = !(recipe.value!!.steps[viewerUiState.value.currentIndex].askable.isNullOrBlank()),
                     onClick = {
                         if (!cameraPermissionStatus.status.isGranted) {
                             toolMenuContent = {
@@ -524,7 +529,10 @@ private fun OverlayControl(
                                 }
                             )
                             toolMenuContent = {
-                                CameraView()
+                                CameraView(
+                                    viewerViewModel =  viewModel,
+                                    onCapture = { viewModel.generateAskable() }
+                                )
                             }
                         }
                     }
@@ -694,14 +702,20 @@ private fun ToolMenu(
     closeMenu: () -> Unit,
     content: @Composable () -> Unit,
 ) {
+    val density = LocalDensity.current
+    var toolMenuHeight by remember { mutableStateOf(Dp.Unspecified)}
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .fillMaxHeight(0.6f)
+            .onGloballyPositioned{ coordinates ->
+                toolMenuHeight = with(density) { coordinates.size.height.toDp() * 0.6f }
+            }
     ) {
         Card(
             elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(R.dimen.padding_small)),
             modifier = modifier
+                .heightIn(min = 0.dp, max = (toolMenuHeight))
                 .fillMaxWidth(0.7f)
         ) {
             Box(

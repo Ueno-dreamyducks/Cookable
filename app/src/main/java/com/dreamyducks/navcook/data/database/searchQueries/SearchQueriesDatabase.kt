@@ -1,4 +1,4 @@
-package com.dreamyducks.navcook.data
+package com.dreamyducks.navcook.data.database.searchQueries
 
 import android.content.Context
 import androidx.room.Database

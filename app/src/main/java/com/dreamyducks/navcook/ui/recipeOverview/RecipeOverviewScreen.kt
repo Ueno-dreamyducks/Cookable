@@ -79,7 +79,7 @@ fun RecipeOverviewScreen(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
     onStartClick: () -> Unit,
-    overviewViewModel: OverviewViewModel = viewModel()
+    overviewViewModel: OverviewViewModel = viewModel(factory = OverviewViewModel.Factory)
 ) {
     val density = LocalDensity.current
     val recipe = overviewViewModel.recipe.collectAsState()

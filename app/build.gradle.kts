@@ -94,6 +94,11 @@ dependencies {
     ksp("androidx.room:room-compiler:${rootProject.extra["room_version"]}")
     implementation("androidx.room:room-ktx:${rootProject.extra["room_version"]}")
 
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    //implementation("com.google.genai:google-genai:1.24.0")
+    //implementation(platform("com.google.firebase:firebase-bom:34.4.0"))
+    //implementation("com.google.firebase:firebase-ai")
+
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 }

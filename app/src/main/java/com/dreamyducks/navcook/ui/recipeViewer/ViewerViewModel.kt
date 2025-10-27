@@ -1,12 +1,16 @@
 package com.dreamyducks.navcook.ui.recipeViewer
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dreamyducks.navcook.data.RecipeManager
 import com.dreamyducks.navcook.network.Recipe
+import com.google.ai.client.generativeai.GenerativeModel
+import com.google.ai.client.generativeai.type.content
+import com.google.ai.client.generativeai.type.generationConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,11 +33,48 @@ class ViewerViewModel() : ViewModel() {
     private val _viewerUiState = MutableStateFlow(ViewerUiState())
     val viewerUiState: StateFlow<ViewerUiState> = _viewerUiState.asStateFlow()
 
+    //vosk voice recognition
     private var model: Model? = null
     private var speechService: SpeechService? = null
 
+    //gemini
+    private val aiModel = GenerativeModel(
+        "gemini-2.5-flash",
+        apiKey = "AIzaSyBdaBVs0aMk3KJo0pfjbE5gg_uqHER1IuM",
+        generationConfig = generationConfig {
+            temperature = 1f
+            topK = 40
+            topP = 0.95f
+            maxOutputTokens = 8192
+            responseMimeType = "text/plain"
+        },
+    )
+
+    private val _askableInput = MutableStateFlow<Bitmap?>(null)
+    val askableInput: StateFlow<Bitmap?> = _askableInput.asStateFlow()
     private val _isCoolDown = MutableStateFlow(false)
     private var isCoolDown: StateFlow<Boolean> = _isCoolDown.asStateFlow()
+
+    //gemini; askable
+    fun generateAskable() {
+        if(askableInput.value != null ) { // check if image is in
+            viewModelScope.launch(Dispatchers.IO) {
+                updateViewerUiState(viewerUiState.value.copy(askableRes = "")) //reset askable response
+                val question = recipe.value!!.steps[viewerUiState.value.currentIndex].askable
+                val inputContent = content {
+                    image(askableInput.value!!)
+                    text("Answer in two sentences: First, just yes/no; then write a sentence summary of is it to this: $question")
+                }
+
+                val response =
+                    aiModel.generateContent(inputContent)
+
+                updateViewerUiState(
+                    viewerUiState.value.copy(askableRes = response.text.orEmpty())
+                )
+            }
+        }
+    }
 
     fun initVosk(context: Context) {
         StorageService.unpack(
@@ -49,6 +90,7 @@ class ViewerViewModel() : ViewModel() {
         )
     }
 
+    //vosk voice recognition
     private fun startListening(context: Context) {
         val stopTerms = listOf("stop", "pause")
         val nextTerm = listOf("next step", "next")
@@ -70,10 +112,14 @@ class ViewerViewModel() : ViewModel() {
                 //if (hypothesis?.contains("stop pause", ignoreCase = true) == true )
                 if (stopTerms.any { hypothesis?.contains(it, ignoreCase = true) ?: false }) {
                     pause()
-                } else if (nextTerm.any { hypothesis?.contains(it, ignoreCase = true) ?: false } && !actionExecuted) {
+                } else if (nextTerm.any {
+                        hypothesis?.contains(it, ignoreCase = true) ?: false
+                    } && !actionExecuted) {
                     actionExecuted = true
                     updateUiStateIndex(1)
-                } else if (previousTerm.any { hypothesis?.contains(it, ignoreCase = true) ?: false } && !actionExecuted) {
+                } else if (previousTerm.any {
+                        hypothesis?.contains(it, ignoreCase = true) ?: false
+                    } && !actionExecuted) {
                     updateUiStateIndex(-1)
                     actionExecuted = true
                 }
@@ -102,6 +148,7 @@ class ViewerViewModel() : ViewModel() {
         })
     }
 
+    //vosk voice recognition
     fun pause() {
         viewModelScope.launch(Dispatchers.Default) {
             updateViewerUiState(
@@ -124,17 +171,23 @@ class ViewerViewModel() : ViewModel() {
         _viewerUiState.value = newState
     }
 
+    fun updateAskableInput(new: Bitmap) {
+        _askableInput.value = new
+    }
+
     fun updateUiStateIndex(changeAmount: Int) {
-        Log.d("MainActivity", "update index")
-        if(_isCoolDown.value) {
+        if (_isCoolDown.value) {
             return
         }
         viewModelScope.launch {
             _isCoolDown.update { true }
 
-            if(viewerUiState.value.currentIndex + changeAmount >= 0 && viewerUiState.value.currentIndex + changeAmount < viewerUiState.value.size + 1) {
+            if (viewerUiState.value.currentIndex + changeAmount >= 0 && viewerUiState.value.currentIndex + changeAmount < viewerUiState.value.size + 1) {
                 _viewerUiState.update { current ->
-                    current.copy(currentIndex = current.currentIndex + changeAmount)
+                    current.copy(
+                        currentIndex = current.currentIndex + changeAmount,
+                        askableRes = "" //reset askable response
+                    )
                 }
             }
 
@@ -186,4 +239,5 @@ data class ViewerUiState(
     val isMicOn: Boolean = false,
     val isShowStatusBar: Boolean = false,
     val transcript: String = "",
+    val askableRes: String = ""
 )

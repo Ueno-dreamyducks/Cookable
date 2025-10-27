@@ -1,5 +1,6 @@
 package com.dreamyducks.navcook.network
 
+import androidx.room.Entity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -40,5 +41,6 @@ data class Step(
     @SerialName(value="imageId")
     val image: String? = null,
     val ingredients: List<String>? = null,
-    val description: String? = null
+    val description: String? = null,
+    val askable: String? = null
 )

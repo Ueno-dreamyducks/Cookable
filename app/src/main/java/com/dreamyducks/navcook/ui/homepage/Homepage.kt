@@ -1,7 +1,9 @@
 package com.dreamyducks.navcook.ui.homepage
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -61,9 +64,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
-import com.dreamyducks.navcook.data.Query
+import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipe
+import com.dreamyducks.navcook.data.database.searchQueries.Query
 import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
+import com.dreamyducks.navcook.network.Recipe
 import com.dreamyducks.navcook.ui.NavCookViewModel
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 
@@ -83,6 +88,8 @@ fun Homepage(
     var isStartClicked = remember { mutableStateOf(false) }
     val queries by homepageViewModel.queriesState.collectAsState()
     val uniqueQueries = queries.distinctBy { it.query }
+    val recentRecipes by homepageViewModel.recentRecipesState.collectAsState()
+    val uniqueRecent = recentRecipes.distinctBy { it.id }
 
     Box(
         modifier = modifier
@@ -132,6 +139,7 @@ fun Homepage(
                     navigateToOverview()
                 }
             )
+            RecentRecipes(recipes = uniqueRecent)
             RecentSearch(
                 queries = uniqueQueries
             )
@@ -328,6 +336,73 @@ private fun TodaysRecipe(
                 is TodaysRecipeState.Error -> {}
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun RecentRecipes(
+    recipes: List<RecentRecipe>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        shape = RoundedCornerShape(dimensionResource((R.dimen.padding_medium))),
+        modifier = modifier
+            .fillMaxWidth()
+    ) {
+        Text(
+            text = stringResource(R.string.recent_search),
+            style = MaterialTheme.typography.titleMedium,
+            fontSize = 28.sp.nonScaledSp,
+            modifier = modifier
+                .padding(dimensionResource(R.dimen.padding_medium))
+        )
+        Card(
+            colors = CardDefaults.cardColors(
+                contentColor = MaterialTheme.colorScheme.surfaceContainerLow
+            ),
+            modifier = modifier
+                .fillMaxWidth()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(dimensionResource(R.dimen.padding_small))
+                    .horizontalScroll(rememberScrollState())
+            ){
+                for(recipe in recipes) {
+                    SubcomposeAsyncImage(
+                        model = ImageRequest.Builder(context = LocalContext.current)
+                            .data(recipe.thumbnail)
+                            .build(),
+                        contentDescription = null,
+                        loading = {
+                            Card(
+                                shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+                                modifier = modifier
+                                    .fillMaxSize()
+                                    .padding(dimensionResource(R.dimen.padding_medium))
+                            ) {
+                                Box(
+                                    modifier = modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    CircularWavyProgressIndicator()
+                                }
+                            }
+                        },
+                        contentScale = ContentScale.Crop,
+                        modifier = modifier
+                            .height(88.dp)
+                            .aspectRatio(1f/1f)
+                            .clip(RoundedCornerShape(16.dp))
+                    )
+                }
+            }
+        }
+
     }
 }
 
