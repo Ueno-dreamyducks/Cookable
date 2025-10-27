@@ -78,6 +78,7 @@ import com.dreamyducks.navcook.network.Recipe
 fun RecipeOverviewScreen(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
+    onNavigateBack: () -> Unit,
     onStartClick: () -> Unit,
     overviewViewModel: OverviewViewModel = viewModel(factory = OverviewViewModel.Factory)
 ) {
@@ -114,6 +115,7 @@ fun RecipeOverviewScreen(
             controlHeight = { px ->
                 controlHeight = with(density) { px.toDp() + 8.dp }
             },
+            onNavigateBack = onNavigateBack,
             onStartClick = onStartClick,
             isBigImage = isBigThumbnail,
             innerPadding = innerPadding,
@@ -151,6 +153,7 @@ fun RecipeOverviewScreen(
 @Composable
 private fun OverlayControl(
     controlHeight: (Int) -> Unit,
+    onNavigateBack: () -> Unit,
     isBigImage: Boolean,
     onStartClick: () -> Unit,
     innerPadding: PaddingValues,
@@ -175,7 +178,7 @@ private fun OverlayControl(
                     )
             ) {
                 IconButton(
-                    onClick = {}
+                    onClick = onNavigateBack
                 ) {
                     Icon(Icons.AutoMirrored.Default.ArrowBack, null)
                 }

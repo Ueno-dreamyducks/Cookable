@@ -12,6 +12,7 @@
     <string name="hello">Hello %s</string>
     <string name="search_recipe">Search Recipe</string>
     <string name="todays_recipe">Today\'s Recipe</string>
+    <string name="recent_visit">Recent Visits</string>
     <string name="recent_search">Recent Searches</string>
 
     <string name="no_recent_search">No Recent Search</string>

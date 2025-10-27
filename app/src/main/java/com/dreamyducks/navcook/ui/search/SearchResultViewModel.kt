@@ -14,6 +14,7 @@ import com.dreamyducks.navcook.data.RecipeManager
 import com.dreamyducks.navcook.data.SearchRepository
 import com.dreamyducks.navcook.network.SearchResult
 import kotlinx.coroutines.flow.StateFlow
+import okio.IOException
 
 class SearchResultViewModel(
     private val searchRepository: SearchRepository
@@ -38,13 +39,18 @@ class SearchResultViewModel(
         val recipeOrNull = loadedRecipes.value.getOrDefault(id, null)
 
         if(recipeOrNull == null) { //recipe was not loaded yet
-            //Create database access to search id
-            val params = mutableMapOf<String, String>()
-            params["recipeId"] = id.toString()
-            Log.d("MainActivity", params.toString())
-            val result = searchRepository.getRecipe(params)
-            Log.d("MainActivity", result.toString());
-            recipeManager.updateSelectedRecipe(result)
+            try {
+                val params = mutableMapOf<String, String>()
+                params["recipeId"] = id.toString()
+                Log.d("MainActivity", params.toString())
+                val result = searchRepository.getRecipe(params)
+                Log.d("MainActivity", result.toString());
+                recipeManager.updateSelectedRecipe(result)
+            } catch (e: IOException) {
+                updateScreen(SearchResultScreen.Result)
+            } catch(e: Exception) {
+                updateScreen(SearchResultScreen.Result)
+            }
         } else { //the recipe already loaded on recipeManager
             recipeManager.updateSelectedRecipe(recipeOrNull)
         }

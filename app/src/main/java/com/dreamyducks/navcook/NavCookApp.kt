@@ -48,7 +48,7 @@ fun NavCookApp(
     val context = LocalContext.current
 
     val startDestination = if (isFirstOpen(context)) {
-        NavCookScreen.Welcome.name
+        NavCookScreen.Homepage.name
     } else {
         NavCookScreen.Homepage.name
     }
@@ -137,6 +137,9 @@ fun NavCookApp(
                     innerPadding = innerPadding,
                     onStartClick = {
                         navController.navigate(NavCookScreen.RecipeViewer.name)
+                    },
+                    onNavigateBack = {
+                        navController.popBackStack()
                     }
                 )
             }
