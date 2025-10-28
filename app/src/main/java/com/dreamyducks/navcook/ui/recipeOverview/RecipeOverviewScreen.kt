@@ -462,7 +462,7 @@ private fun IngredientWithCheckbox(
 @Composable
 fun IngredientWithCheckboxPreview() {
     MaterialTheme {
-        IngredientWithCheckbox(Ingredient("Chicken", "pounds", 1))
+        IngredientWithCheckbox(Ingredient("Chicken", "pounds", 1.0))
     }
 }
 

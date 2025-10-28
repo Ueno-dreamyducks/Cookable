@@ -14,20 +14,20 @@ val FriedRice_Recipe =
                 Ingredient(
                     name = "Rice",
                     unit = "grams",
-                    amount = 300
+                    amount = 300.0
                 ),
-                Ingredient(name = "Green Onion", unit = "grams", amount = 30),
+                Ingredient(name = "Green Onion", unit = "grams", amount = 30.0),
                 Ingredient(
                     name = "Egg",
                     unit = "eggs",
-                    amount = 2
+                    amount = 2.0
                 ),
                 Ingredient(
                     name = "Vegetable Oil",
                     unit = "Tablespoons",
-                    amount = 2
+                    amount = 2.0
                 ),
-                Ingredient(name = "Soy Sauce", unit = "Tablespoon", amount = 1)
+                Ingredient(name = "Soy Sauce", unit = "Tablespoon", amount = 1.0)
             ),
         steps = listOf(
             Step(

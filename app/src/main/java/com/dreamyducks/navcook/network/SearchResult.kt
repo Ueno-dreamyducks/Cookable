@@ -1,6 +1,5 @@
 package com.dreamyducks.navcook.network
 
-import androidx.room.Entity
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -32,7 +31,7 @@ data class Recipe(
 data class Ingredient(
     val name: String = "",
     val unit: String = "",
-    val amount : Int? = null
+    val amount : Double? = null
 )
 @Serializable
 data class Step(

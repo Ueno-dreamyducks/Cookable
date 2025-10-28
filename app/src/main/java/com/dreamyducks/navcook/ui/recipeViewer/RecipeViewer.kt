@@ -84,6 +84,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -107,6 +108,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.StateFlow
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -202,6 +204,7 @@ fun RecipeViewer(
                 overlayHeight = dp
             },
             viewModel = viewModel,
+            recipeUiState = recipeUiState,
             onShowExitDialog = { showExitDialog = true },
         )
 
@@ -332,6 +335,7 @@ private fun OverlayControl(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
     viewModel: ViewerViewModel,
+    recipeUiState: StateFlow<Recipe?>,
     isChangingStep: Boolean,
     overlayHeight: (Dp) -> Unit,
     onShowExitDialog: () -> Unit,
@@ -528,6 +532,14 @@ private fun OverlayControl(
                                 }
                             )
                             toolMenuContent = {
+                                Text(
+                                    recipeUiState.value!!.steps[viewerUiState.value.currentIndex].askable!!,
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = FontWeight.Medium,
+                                    fontStyle = FontStyle.Italic,
+                                    modifier = modifier
+                                        .padding(vertical = dimensionResource(R.dimen.padding_medium))
+                                )
                                 CameraView(
                                     viewerViewModel =  viewModel,
                                     onCapture = { viewModel.generateAskable() }
