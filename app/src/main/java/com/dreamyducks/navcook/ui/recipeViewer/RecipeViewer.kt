@@ -596,7 +596,7 @@ private fun OverlayControl(
                                 currentState = toolMenuState,
                                 clickedMenuState = ToolMenuState.MicView,
                                 onShowMenuChange = { it ->
-                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
+                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = false))
                                 },
                                 newState = { it ->
                                     toolMenuState = it
@@ -605,9 +605,6 @@ private fun OverlayControl(
                                     titleResId = it
                                 }
                             )
-                            toolMenuContent = {
-                                Mic(uiState = viewerUiState.value)
-                            }
                             if(viewerUiState.value.isMicOn) {
                                 viewModel.pause()
                             } else {

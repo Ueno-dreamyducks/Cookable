@@ -1,19 +1,24 @@
 package com.dreamyducks.navcook.ui.search
 
+import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dreamyducks.navcook.NavCookApplication
 import com.dreamyducks.navcook.data.RecipeManager
 import com.dreamyducks.navcook.data.SearchRepository
 import com.dreamyducks.navcook.network.SearchResult
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import okio.IOException
 
 class SearchResultViewModel(
@@ -53,6 +58,30 @@ class SearchResultViewModel(
             }
         } else { //the recipe already loaded on recipeManager
             recipeManager.updateSelectedRecipe(recipeOrNull)
+        }
+    }
+
+    suspend fun onGetAll(
+        context: Context,
+    ) {
+        updateScreen(SearchResultScreen.LoadingRecipe)
+
+        val params = mutableMapOf<String, String>()
+        params["getAll"] = ""
+
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val result = searchRepository.onGetAll(params)
+
+                recipeManager.updateSearchQuery("All")
+                recipeManager.updateFoundRecipes(result)
+
+                updateScreen(SearchResultScreen.Result)
+            } catch(e: IOException) {
+                Toast.makeText(context, "Internet Error", Toast.LENGTH_SHORT).show()
+            } catch(e: Exception) {
+                Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

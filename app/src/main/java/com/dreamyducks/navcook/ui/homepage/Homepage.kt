@@ -32,7 +32,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -67,7 +66,6 @@ import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipe
 import com.dreamyducks.navcook.data.database.searchQueries.Query
 import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
-import com.dreamyducks.navcook.ui.NavCookViewModel
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -121,7 +119,7 @@ fun Homepage(
                 .verticalScroll(rememberScrollState())
         ) {
             HelloWord(
-                userName = "User"
+                userName = ""
             )
             Box(
                 modifier = modifier
@@ -427,6 +425,8 @@ private fun RecentSearch(
             Text(
                 text = stringResource(R.string.no_recent_search),
                 textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp.nonScaledSp,
                 modifier = modifier
                     .fillMaxWidth()
                     .padding(vertical = dimensionResource(R.dimen.padding_large))

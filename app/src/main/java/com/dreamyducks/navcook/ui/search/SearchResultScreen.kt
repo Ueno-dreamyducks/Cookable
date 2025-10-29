@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,10 +24,12 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,6 +74,8 @@ fun SearchResultScreen(
     val coroutine = rememberCoroutineScope()
     val searchResultScreen = searchResultViewModel.searchResultScreen
 
+    val context = LocalContext.current
+
     LaunchedEffect(Unit) {
         searchResultViewModel.updateScreen(SearchResultScreen.Result)
     }
@@ -100,6 +106,11 @@ fun SearchResultScreen(
                                 searchResultViewModel.onGetRecipeDetail(id = recipeId)
                                 navigateToRecipeOverview()
                             }
+                        },
+                        onGetAllClick = {
+                            coroutine.launch {
+                                searchResultViewModel.onGetAll(context = context)
+                            }
                         }
                     )
                 is SearchResultScreen.LoadingRecipe ->
@@ -113,45 +124,62 @@ fun SearchResultScreen(
 private fun Success(
     recipes: List<SearchResult>,
     onRecipeClick: (Int) -> Unit,
+    onGetAllClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (recipes.isNotEmpty()) {
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
-        ) {
-            itemsIndexed(recipes) { index, item ->
-                RecipeItem(
-                    isFirstItem = index == 0,
-                    isLastItem = index == recipes.lastIndex,
-                    recipe = item,
-                    onRecipeClick = onRecipeClick
-                )
+    Column {
+        if (recipes.isNotEmpty()) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small))
+            ) {
+                itemsIndexed(recipes) { index, item ->
+                    RecipeItem(
+                        isFirstItem = index == 0,
+                        isLastItem = index == recipes.lastIndex,
+                        recipe = item,
+                        onRecipeClick = onRecipeClick
+                    )
+                }
             }
-        }
-    } else { //Result found
-        Card(
-            modifier = modifier
-                .fillMaxSize()
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
+        } else { //Result found
+            Card(
                 modifier = modifier
                     .fillMaxSize()
             ) {
-                Icon(
-                    Icons.Default.SearchOff,
-                    contentDescription = null,
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
                     modifier = modifier
-                        .size(120.dp)
-                        .padding(dimensionResource(R.dimen.padding_large))
-                )
-                Text(
-                    text = stringResource(R.string.no_recipe_found),
-                    fontSize = 32.sp.nonScaledSp,
-                    fontWeight = FontWeight.Medium
-                )
+                        .fillMaxSize()
+                ) {
+                    Icon(
+                        Icons.Default.SearchOff,
+                        contentDescription = null,
+                        modifier = modifier
+                            .size(120.dp)
+                            .padding(dimensionResource(R.dimen.padding_large))
+                    )
+                    Text(
+                        text = stringResource(R.string.no_recipe_found),
+                        fontSize = 32.sp.nonScaledSp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
+        }
+        Spacer(modifier = modifier.padding(dimensionResource(R.dimen.padding_small)))
+        HorizontalDivider()
+        TextButton(
+            onClick = {
+                onGetAllClick()
+            },
+            modifier = modifier
+                .fillMaxWidth()
+                .align(Alignment.CenterHorizontally)
+        ) {
+            Text(
+                text = "Search All Recipes"
+            )
         }
     }
 }

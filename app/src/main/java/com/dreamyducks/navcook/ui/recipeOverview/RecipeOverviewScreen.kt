@@ -26,10 +26,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Label
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -202,22 +200,22 @@ private fun OverlayControl(
             ) {
                 Text("Start", modifier = modifier.padding(dimensionResource(R.dimen.padding_small)))
             }
-            Button(
-                onClick = {},
-                shape = RoundedCornerShape(dimensionResource(R.dimen.padding_small)),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                ),
-                modifier = modifier
-                    .weight(1f)
-            ) {
-                Icon(
-                    Icons.Default.Menu,
-                    null,
-                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                    modifier = modifier.padding(dimensionResource(R.dimen.padding_small))
-                )
-            }
+//            Button(
+//                onClick = {},
+//                shape = RoundedCornerShape(dimensionResource(R.dimen.padding_small)),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+//                ),
+//                modifier = modifier
+//                    .weight(1f)
+//            ) {
+//                Icon(
+//                    Icons.Default.Menu,
+//                    null,
+//                    tint = MaterialTheme.colorScheme.onTertiaryContainer,
+//                    modifier = modifier.padding(dimensionResource(R.dimen.padding_small))
+//                )
+//            }
         }
     }
 }
