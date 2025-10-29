@@ -14,6 +14,7 @@
     <string name="todays_recipe">Today\'s Recipe</string>
     <string name="recent_visit">Recent Visits</string>
     <string name="recent_search">Recent Searches</string>
+    <string name="go_to_search">Go to Search</string>
 
     <string name="no_recent_search">No Recent Search</string>
     <string name="bbq">BBQ</string>

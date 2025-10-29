@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -77,7 +78,7 @@ fun Homepage(
     innerPadding: PaddingValues,
     modifier: Modifier = Modifier,
     homepageViewModel: HomepageViewModel = viewModel(factory = HomepageViewModel.Factory),
-    viewModel: NavCookViewModel = viewModel(),
+    onGoSearch: () -> Unit,
     navigateToOverview: () -> Unit,
     navigateToSearch: () -> Unit,
 ) {
@@ -138,52 +139,29 @@ fun Homepage(
                     navigateToOverview()
                 }
             )
-            RecentRecipes(
-                recipes = uniqueRecent,
-                onRecipeClick = { id ->
-                    isStartClicked.value = true
+            if(uniqueRecent.isNotEmpty()) {
+                RecentRecipes(
+                    recipes = uniqueRecent,
+                    onRecipeClick = { id ->
+                        isStartClicked.value = true
 
-                    coroutine.launch(Dispatchers.Main) {
-                        val isSuccess = homepageViewModel.onGetRecipeById(id, context)
+                        coroutine.launch(Dispatchers.Main) {
+                            val isSuccess = homepageViewModel.onGetRecipeById(id, context)
 
-                        if(isSuccess) {
-                            navigateToOverview()
-                        } else {
-                            isStartClicked.value = false
+                            if (isSuccess) {
+                                navigateToOverview()
+                            } else {
+                                isStartClicked.value = false
+                            }
                         }
+
                     }
-
-                }
-            )
+                )
+            }
             RecentSearch(
-                queries = uniqueQueries
+                queries = uniqueQueries,
+                onGoSearch = onGoSearch,
             )
-            Spacer(modifier.weight(1f))
-            OutlinedButton(
-                onClick = {
-                    viewModel.setSampleRecipe()
-                    navigateToOverview()
-                }
-            ) {
-                Text("test")
-            }
-
-            OutlinedButton(
-                onClick = {
-                    viewModel.textToSpeech(
-                        context = context
-                    )
-                }
-            ) {
-                Text("Speech test")
-            }
-            OutlinedButton(
-                onClick = {
-                    viewModel.stopTextToSpeech()
-                }
-            ) {
-                Text("stop text to speech")
-            }
         }
     }
 }
@@ -387,38 +365,40 @@ private fun RecentRecipes(
                     .padding(dimensionResource(R.dimen.padding_small))
                     .horizontalScroll(rememberScrollState())
             ){
-                for(recipe in recipes) {
-                    SubcomposeAsyncImage(
-                        model = ImageRequest.Builder(context = LocalContext.current)
-                            .data(recipe.thumbnail)
-                            .build(),
-                        contentDescription = null,
-                        loading = {
-                            Card(
-                                shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
-                                modifier = modifier
-                                    .fillMaxSize()
-                                    .padding(dimensionResource(R.dimen.padding_medium))
-                            ) {
-                                Box(
-                                    modifier = modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center,
+                if(recipes.size != 0) {
+                    for (recipe in recipes) {
+                        SubcomposeAsyncImage(
+                            model = ImageRequest.Builder(context = LocalContext.current)
+                                .data(recipe.thumbnail)
+                                .build(),
+                            contentDescription = null,
+                            loading = {
+                                Card(
+                                    shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+                                    modifier = modifier
+                                        .fillMaxSize()
+                                        .padding(dimensionResource(R.dimen.padding_medium))
                                 ) {
-                                    CircularWavyProgressIndicator()
+                                    Box(
+                                        modifier = modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        CircularWavyProgressIndicator()
+                                    }
                                 }
-                            }
-                        },
-                        contentScale = ContentScale.Crop,
-                        modifier = modifier
-                            .height(88.dp)
-                            .aspectRatio(1f/1f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .clickable(
-                                onClick = {
-                                    onRecipeClick(recipe.id)
-                                }
-                            )
-                    )
+                            },
+                            contentScale = ContentScale.Crop,
+                            modifier = modifier
+                                .height(88.dp)
+                                .aspectRatio(1f / 1f)
+                                .clip(RoundedCornerShape(16.dp))
+                                .clickable(
+                                    onClick = {
+                                        onRecipeClick(recipe.id)
+                                    }
+                                )
+                        )
+                    }
                 }
             }
         }
@@ -429,6 +409,7 @@ private fun RecentRecipes(
 @Composable
 private fun RecentSearch(
     queries: List<Query>,
+    onGoSearch: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -442,27 +423,48 @@ private fun RecentSearch(
             modifier = modifier
                 .padding(dimensionResource(R.dimen.padding_medium))
         )
-        for (query in queries) {
-            Card(
-                shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                ),
+        if(queries.isEmpty()) {
+            Text(
+                text = stringResource(R.string.no_recent_search),
+                textAlign = TextAlign.Center,
                 modifier = modifier
-                    .padding(dimensionResource(R.dimen.padding_small))
                     .fillMaxWidth()
+                    .padding(vertical = dimensionResource(R.dimen.padding_large))
+            )
+            Spacer(modifier = modifier.padding(dimensionResource(R.dimen.padding_small)))
+            Button(
+                onClick = onGoSearch,
+                modifier = modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(dimensionResource(R.dimen.padding_medium))
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
-                    verticalAlignment = Alignment.CenterVertically,
+                Text(
+                    text = stringResource(R.string.go_to_search)
+                )
+            }
+        } else {
+            for (query in queries) {
+                Card(
+                    shape = RoundedCornerShape(dimensionResource(R.dimen.padding_medium)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    ),
                     modifier = modifier
                         .padding(dimensionResource(R.dimen.padding_small))
+                        .fillMaxWidth()
                 ) {
-                    Icon(imageVector = Icons.Default.SavedSearch, null)
-                    Text(
-                        text = query.query,
-                        fontWeight = FontWeight.Medium,
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(dimensionResource(R.dimen.padding_small)),
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = modifier
+                            .padding(dimensionResource(R.dimen.padding_small))
+                    ) {
+                        Icon(imageVector = Icons.Default.SavedSearch, null)
+                        Text(
+                            text = query.query,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
                 }
             }
         }
@@ -509,6 +511,7 @@ fun HomepagePreview() {
         Homepage(
             innerPadding = PaddingValues(0.dp),
             navigateToOverview = {},
+            onGoSearch = {},
             navigateToSearch = {}
         )
     }

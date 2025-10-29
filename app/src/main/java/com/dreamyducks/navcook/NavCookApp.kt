@@ -123,7 +123,9 @@ fun NavCookApp(
             ) {
                 Homepage(
                     innerPadding = innerPadding,
-                    viewModel = navCookViewModel,
+                    onGoSearch = {
+                        navController.navigate(NavCookScreen.Search.name)
+                    },
                     navigateToOverview = {
                         navController.navigate(NavCookScreen.RecipeOverview.name)
                     },
