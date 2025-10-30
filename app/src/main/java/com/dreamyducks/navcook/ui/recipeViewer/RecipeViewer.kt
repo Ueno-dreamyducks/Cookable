@@ -791,7 +791,7 @@ private fun Menu(
     LaunchedEffect(Unit) {
         while (true) {
             val calendar = Calendar.getInstance()
-            val format = SimpleDateFormat("HH:mm:ss a", Locale.getDefault())
+            val format = SimpleDateFormat("hh:mm:ss a", Locale.getDefault())
             currentTime = format.format(calendar.time)
             delay(1000)
         }

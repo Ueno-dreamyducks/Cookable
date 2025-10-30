@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -365,16 +366,18 @@ private fun Description(
 
     var isDescriptionExpand by remember { mutableStateOf(false) }
 
-    Text(
-        text = recipe!!.description,
-        onTextLayout = { textLayoutResult ->
-            descriptionLineCount = textLayoutResult.lineCount
-        },
-        overflow = TextOverflow.Ellipsis,
-        maxLines = if (isDescriptionExpand) Int.MAX_VALUE else 5,
-        modifier = modifier
-            .animateContentSize()
-    )
+    SelectionContainer {
+        Text(
+            text = recipe!!.description,
+            onTextLayout = { textLayoutResult ->
+                descriptionLineCount = textLayoutResult.lineCount
+            },
+            overflow = TextOverflow.Ellipsis,
+            maxLines = if (isDescriptionExpand) Int.MAX_VALUE else 5,
+            modifier = modifier
+                .animateContentSize()
+        )
+    }
     if (descriptionLineCount >= 5) {
         if (isDescriptionExpand) {
             Text(
@@ -427,6 +430,17 @@ private fun IngredientWithCheckbox(
 ) {
     var checked by remember { mutableStateOf(false) }
 
+
+    val convertedAmount = if(ingredient.amount != null) {
+        if(ingredient.amount.compareTo(ingredient.amount.toInt()) == 0) {
+            ingredient.amount.toInt()
+        } else {
+            ingredient.amount
+        }
+    } else {
+        0
+    }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -451,7 +465,7 @@ private fun IngredientWithCheckbox(
             )
         }
         Text(
-            text = ingredient.amount.toString() + " " + ingredient.unit,
+            text = convertedAmount.toString() + " " + ingredient.unit,
         )
     }
 }

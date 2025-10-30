@@ -170,7 +170,7 @@ private fun HelloWord(
     modifier: Modifier = Modifier
 ) {
     Text(
-        text = stringResource(R.string.hello, userName),
+        text = stringResource(R.string.app_name),
         fontSize = 32.sp.nonScaledSp,
         style = MaterialTheme.typography.titleMedium,
     )

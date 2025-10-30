@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name" translatable="false">Nav Cook</string>
+    <string name="app_name" translatable="false">Cookable</string>
     <string name="is_first_preference_key" translatable="false">is_first_open</string>
 
     <string name="title_welcome">Welcome</string>
