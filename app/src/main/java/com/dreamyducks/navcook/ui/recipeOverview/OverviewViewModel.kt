@@ -9,9 +9,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dreamyducks.navcook.NavCookApplication
 import com.dreamyducks.navcook.data.RecipeManager
 import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipesRepository
-import com.dreamyducks.navcook.data.database.recentRecipes.toReduced
 import com.dreamyducks.navcook.network.Recipe
-import com.dreamyducks.navcook.ui.homepage.HomepageViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -26,7 +24,7 @@ class OverviewViewModel(
     init {
         viewModelScope.launch(Dispatchers.Default) {
             recipeManager.addLoadedRecipes(recipe.value!!)
-            recentRecipesRepository.insertRecipe(recipe.value!!.toReduced())
+            recentRecipesRepository.insertRecipe(recipe.value!!)
         }
     }
 

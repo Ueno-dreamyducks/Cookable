@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface RecentRecipeDao {
     @Insert(onConflict = OnConflictStrategy.Companion.IGNORE)
-    suspend fun insert(recipe: RecentRecipe)
+    suspend fun insert(recipe: Recipe)
 
-    @Query("SELECT * FROM recipes_history")
-    fun getAllRecentRecipesStream() : Flow<List<RecentRecipe>>
+    @Query("SELECT * FROM recent_recipes")
+    fun getAllRecentRecipesStream() : Flow<List<Recipe>>
 }
 
 @Entity(tableName = "recipes_history")

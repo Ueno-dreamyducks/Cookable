@@ -1,8 +1,6 @@
 package com.dreamyducks.navcook.ui.homepage
 
-import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
@@ -12,11 +10,12 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dreamyducks.navcook.NavCookApplication
 import com.dreamyducks.navcook.data.RecipeManager
 import com.dreamyducks.navcook.data.SearchRepository
-import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipe
 import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipesRepository
 import com.dreamyducks.navcook.data.database.searchQueries.Query
 import com.dreamyducks.navcook.data.database.searchQueries.SearchQueriesRepository
+import com.dreamyducks.navcook.network.Ingredient
 import com.dreamyducks.navcook.network.Recipe
+import com.dreamyducks.navcook.network.Step
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,7 +25,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okio.IOException
 
 class HomepageViewModel(
     private val searchRepository: SearchRepository,
@@ -45,12 +43,17 @@ class HomepageViewModel(
                 initialValue = listOf(Query(0, ""))
             )
 
-    val recentRecipesState: StateFlow<List<RecentRecipe>> =
+    val recentRecipesState: StateFlow<List<Recipe>> =
         recentRecipesRepository.getAllRecentRecipesStream().map { it }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000L),
-                initialValue = listOf(RecentRecipe())
+                initialValue = listOf(
+                    Recipe(
+                        ingredients = listOf(Ingredient()),
+                        steps = listOf(Step())
+                    ),
+                )
             )
 
     init {
@@ -86,21 +89,10 @@ class HomepageViewModel(
         }
     }
 
-    suspend fun onGetRecipeById(id: Int, context: Context) : Boolean {
-        try {
-            val params = mutableMapOf<String, String>()
-            params["recipeId"] = id.toString()
-            val result = searchRepository.getRecipe(params)
-            recipeManager.updateSelectedRecipe(result)
-            return true
-        } catch (e: IOException) {
-            Toast.makeText(context, "No Internet", Toast.LENGTH_SHORT).show()
-            return false
-        } catch (e: Exception) {
-            Toast.makeText(context, "An error occupied", Toast.LENGTH_SHORT).show()
-            return false
-        }
+    fun setRecipe(recipe: Recipe) {
+        recipeManager.updateSelectedRecipe(recipe)
     }
+
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

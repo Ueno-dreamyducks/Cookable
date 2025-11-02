@@ -1,5 +1,7 @@
 package com.dreamyducks.navcook.network
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -16,7 +18,9 @@ data class SearchResult (
 )
 
 @Serializable
+@Entity(tableName = "recent_recipes")
 data class Recipe(
+    @PrimaryKey
     val id: Int = 0,
     val title: String = "",
     val description: String = "",

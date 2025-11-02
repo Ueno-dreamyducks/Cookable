@@ -62,13 +62,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import com.dreamyducks.navcook.R
-import com.dreamyducks.navcook.data.database.recentRecipes.RecentRecipe
 import com.dreamyducks.navcook.data.database.searchQueries.Query
 import com.dreamyducks.navcook.data.navigationItems
 import com.dreamyducks.navcook.format.nonScaledSp
+import com.dreamyducks.navcook.network.Recipe
 import com.dreamyducks.navcook.ui.theme.NavCookTheme
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -140,19 +138,12 @@ fun Homepage(
             if(uniqueRecent.isNotEmpty()) {
                 RecentRecipes(
                     recipes = uniqueRecent,
-                    onRecipeClick = { id ->
+                    onRecipeClick = { recipe ->
                         isStartClicked.value = true
 
-                        coroutine.launch(Dispatchers.Main) {
-                            val isSuccess = homepageViewModel.onGetRecipeById(id, context)
+                        homepageViewModel.setRecipe(recipe)
 
-                            if (isSuccess) {
-                                navigateToOverview()
-                            } else {
-                                isStartClicked.value = false
-                            }
-                        }
-
+                        navigateToOverview()
                     }
                 )
             }
@@ -333,8 +324,8 @@ private fun TodaysRecipe(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun RecentRecipes(
-    recipes: List<RecentRecipe>,
-    onRecipeClick: (Int) -> Unit,
+    recipes: List<Recipe>,
+    onRecipeClick: (Recipe) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -392,7 +383,7 @@ private fun RecentRecipes(
                                 .clip(RoundedCornerShape(16.dp))
                                 .clickable(
                                     onClick = {
-                                        onRecipeClick(recipe.id)
+                                        onRecipeClick(recipe)
                                     }
                                 )
                         )
