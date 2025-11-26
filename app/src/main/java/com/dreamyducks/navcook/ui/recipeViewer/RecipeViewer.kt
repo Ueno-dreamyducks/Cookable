@@ -320,14 +320,7 @@ fun RecipeViewer(
 }
 
 //State to show which menu screen is selected
-sealed interface ToolMenuState {
-    object None : ToolMenuState
-    object CameraView : ToolMenuState
-    object MicView : ToolMenuState
-    object Menu : ToolMenuState
-    object RecordPermission : ToolMenuState
-    object CameraPermission : ToolMenuState
-}
+
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -360,9 +353,70 @@ private fun OverlayControl(
     )
 
     var menuComposableSize by remember { mutableStateOf(Rect.Zero) }
-    var toolMenuState: ToolMenuState by remember { mutableStateOf(ToolMenuState.None) }
-    var toolMenuContent by remember { mutableStateOf<@Composable () -> Unit>({ Text("Initial Menu") }) } //set composes to show when menu container show up
-    var titleResId by remember { mutableStateOf<Int?>(null) }
+    val toolMenuState = viewModel.toolMenuState.collectAsState()
+    val titleResId = viewModel.titleResId.collectAsState()
+    val showMenu = viewModel.showMenu.collectAsState()
+    val toolMenuContent: @Composable () -> Unit = {
+        when (toolMenuState.value) {
+            is ToolMenuState.None -> {}
+            is ToolMenuState.MicView -> {
+                if (!micPermissionStatus.status.isGranted) {
+                    PermissionCard(
+                        shouldShowRationale = micPermissionStatus.status.shouldShowRationale,
+                        rationale = stringResource(R.string.mic_permission_needed),
+                        icon = Icons.Default.MicOff,
+                        onGrantClick = {
+                            micPermissionStatus.launchPermissionRequest()
+                        }
+                    )
+                } else {
+                    if (viewerUiState.value.isMicOn) {
+                        viewModel.pause()
+                    } else {
+                        viewModel.initVosk(context)
+                    }
+                }
+            }
+
+            is ToolMenuState.CameraView -> {
+                if (!cameraPermissionStatus.status.isGranted) {
+                    PermissionCard(
+                        icon = Icons.Default.CameraAlt,
+                        rationale = stringResource(R.string.camera_permission_needed),
+                        shouldShowRationale = cameraPermissionStatus.status.shouldShowRationale,
+                        onGrantClick = {
+                            cameraPermissionStatus.launchPermissionRequest()
+                        }
+                    )
+                } else {
+                    Text(
+                        recipe.value!!.steps[viewerUiState.value.currentIndex].askable!!,
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Medium,
+                        fontStyle = FontStyle.Italic,
+                        modifier = modifier
+                            .padding(vertical = dimensionResource(R.dimen.padding_medium))
+                    )
+                    CameraView(
+                        viewerViewModel = viewModel,
+                        onCapture = { viewModel.generateAskable() }
+                    )
+                }
+            }
+
+            is ToolMenuState.Menu -> {
+                Menu(
+                    viewModel = viewModel,
+                    viewerUiState = viewerUiState,
+                    onShowExitDialog = onShowExitDialog
+                )
+            }
+            else -> {
+                Text("")
+            }
+        }
+    }
+    //by remember { mutableStateOf<@Composable () -> Unit>({ Text("Initial Menu") }) } //set composes to show when menu container show up
 
     val density = LocalDensity.current
     var controlHeight by remember { mutableStateOf(0.dp) }
@@ -382,16 +436,16 @@ private fun OverlayControl(
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { offset: Offset ->
-                        if (viewerUiState.value.isShowMenu && !menuComposableSize.contains(offset)) {
+                        if (showMenu.value && !menuComposableSize.contains(offset)) {
                             viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = false))
-                            toolMenuState = ToolMenuState.None
+                            viewModel.changeMenuState(ToolMenuState.None)
                         }
                     }
                 )
             }
     ) {
         AnimatedVisibility( //expanded menu
-            viewerUiState.value.isShowMenu,
+            visible = showMenu.value,
             enter = slideInVertically {
                 with(density) { 40.dp.roundToPx() }
             } + fadeIn(),
@@ -424,20 +478,11 @@ private fun OverlayControl(
                     modifier = modifier
                         .align(Alignment.BottomCenter),
                     closeMenu = {
-                        changeMenuState(
-                            currentState = toolMenuState,
-                            onShowMenuChange = { it ->
-                                viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
-                            },
-                            newState = { it ->
-                                toolMenuState = it
-                            },
-                            newTitle = { it ->
-                                titleResId = it
-                            }
+                        viewModel.changeMenuState(
+                            newState = ToolMenuState.None
                         )
                     },
-                    titleResId = titleResId
+                    titleResId = titleResId.value
                 ) {
                     toolMenuContent()
                 }
@@ -481,70 +526,13 @@ private fun OverlayControl(
                     enabled = !(recipe.value!!.steps[viewerUiState.value.currentIndex].askable.isNullOrBlank()),
                     onClick = {
                         if (!cameraPermissionStatus.status.isGranted) {
-                            toolMenuContent = {
-                                PermissionCard(
-                                    icon = Icons.Default.CameraAlt,
-                                    onGrantClick = {
-                                        changeMenuState( // menu
-                                            currentState = toolMenuState,
-                                            clickedMenuState = ToolMenuState.None,
-                                            onShowMenuChange = { it ->
-                                                viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = false))
-                                            },
-                                            newState = { it ->
-                                                toolMenuState = it
-                                            },
-                                            newTitle = { it ->
-                                                titleResId = it
-                                            }
-                                        )
-                                        cameraPermissionStatus.launchPermissionRequest()
-                                    },
-                                    rationale = stringResource(R.string.camera_permission_needed),
-                                    shouldShowRationale = cameraPermissionStatus.status.shouldShowRationale
-                                )
-                            }
-                            changeMenuState(
-                                currentState = toolMenuState,
-                                clickedMenuState = ToolMenuState.CameraPermission,
-                                onShowMenuChange = { it ->
-                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
-                                },
-                                newState = { it ->
-                                    toolMenuState = it
-                                },
-                                newTitle = { it ->
-                                    titleResId = it
-                                }
+                            viewModel.changeMenuState(
+                                newState = ToolMenuState.CameraView
                             )
                         } else {
-                            changeMenuState(
-                                currentState = toolMenuState,
-                                clickedMenuState = ToolMenuState.CameraView,
-                                onShowMenuChange = { it ->
-                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
-                                },
-                                newState = { it ->
-                                    toolMenuState = it
-                                },
-                                newTitle = { it ->
-                                    titleResId = it
-                                }
+                            viewModel.changeMenuState(
+                                newState = ToolMenuState.CameraView
                             )
-                            toolMenuContent = {
-                                Text(
-                                    recipeUiState.value!!.steps[viewerUiState.value.currentIndex].askable!!,
-                                    textAlign = TextAlign.Center,
-                                    fontWeight = FontWeight.Medium,
-                                    fontStyle = FontStyle.Italic,
-                                    modifier = modifier
-                                        .padding(vertical = dimensionResource(R.dimen.padding_medium))
-                                )
-                                CameraView(
-                                    viewerViewModel =  viewModel,
-                                    onCapture = { viewModel.generateAskable() }
-                                )
-                            }
                         }
                     }
                 ) {
@@ -553,59 +541,14 @@ private fun OverlayControl(
                 IconButton(
                     onClick = {
                         if (!micPermissionStatus.status.isGranted) { //show mic permission request
-                            toolMenuContent = {
-                                PermissionCard(
-                                    shouldShowRationale = micPermissionStatus.status.shouldShowRationale,
-                                    rationale = stringResource(R.string.mic_permission_needed),
-                                    icon = Icons.Default.MicOff,
-                                    onGrantClick = {
-                                        changeMenuState(
-                                            currentState = toolMenuState,
-                                            clickedMenuState = ToolMenuState.None,
-                                            onShowMenuChange = { it ->
-                                                viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = false))
-                                            },
-                                            newState = { it ->
-                                                toolMenuState = it
-                                            },
-                                            newTitle = { it ->
-                                                titleResId = it
-                                            }
-                                        )
-                                        micPermissionStatus.launchPermissionRequest()
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                )
-                            }
-                            changeMenuState(
-                                currentState = toolMenuState,
-                                clickedMenuState = ToolMenuState.RecordPermission,
-                                onShowMenuChange = { it ->
-                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
-                                },
-                                newState = { it ->
-                                    toolMenuState = it
-                                },
-                                newTitle = { it ->
-                                    titleResId = it
-                                }
+                            viewModel.changeMenuState(
+                                newState = ToolMenuState.MicView
                             )
                         } else { //Granted
-                            changeMenuState(
-                                currentState = toolMenuState,
-                                clickedMenuState = ToolMenuState.MicView,
-                                onShowMenuChange = { it ->
-                                    viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = false))
-                                },
-                                newState = { it ->
-                                    toolMenuState = it
-                                },
-                                newTitle = { it ->
-                                    titleResId = it
-                                }
+                            viewModel.changeMenuState(
+                                newState = ToolMenuState.MicView
                             )
-                            if(viewerUiState.value.isMicOn) {
+                            if (viewerUiState.value.isMicOn) {
                                 viewModel.pause()
                             } else {
                                 viewModel.initVosk(context)
@@ -625,27 +568,9 @@ private fun OverlayControl(
                 IconButton(
                     onClick = {
                         //Set contents on menu container
-                        titleResId = R.string.menu
-                        toolMenuContent = {
-                            Menu(
-                                viewModel = viewModel,
-                                viewerUiState = viewerUiState,
-                                onShowExitDialog = onShowExitDialog
-                            )
-                        }
-                        changeMenuState(
-                            currentState = toolMenuState,
-                            clickedMenuState = ToolMenuState.Menu,
-                            clickedStateTitleResId = R.string.menu,
-                            onShowMenuChange = { it ->
-                                viewModel.updateViewerUiState(viewerUiState.value.copy(isShowMenu = it))
-                            },
-                            newState = { it ->
-                                toolMenuState = it
-                            },
-                            newTitle = { it ->
-                                titleResId = it
-                            }
+                        viewModel.changeMenuState(
+                            newState = ToolMenuState.Menu,
+                            title = R.string.menu
                         )
                     }
                 ) {
@@ -711,12 +636,12 @@ private fun ToolMenu(
     content: @Composable () -> Unit,
 ) {
     val density = LocalDensity.current
-    var toolMenuHeight by remember { mutableStateOf(Dp.Unspecified)}
+    var toolMenuHeight by remember { mutableStateOf(Dp.Unspecified) }
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .onGloballyPositioned{ coordinates ->
+            .onGloballyPositioned { coordinates ->
                 toolMenuHeight = with(density) { coordinates.size.height.toDp() * 0.6f }
             }
     ) {

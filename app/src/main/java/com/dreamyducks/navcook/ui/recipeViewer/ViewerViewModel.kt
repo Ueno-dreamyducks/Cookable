@@ -37,7 +37,16 @@ class ViewerViewModel() : ViewModel() {
     private var model: Model? = null
     private var speechService: SpeechService? = null
 
+    //Tool menu state
+    private val _toolMenuState = MutableStateFlow<ToolMenuState>(ToolMenuState.None)
+    val toolMenuState: StateFlow<ToolMenuState> = _toolMenuState.asStateFlow()
+    private val _titleResId = MutableStateFlow<Int?>(null)
+    val titleResId : StateFlow<Int?> = _titleResId.asStateFlow()
+    private val _showMenu = MutableStateFlow(false)
+    val showMenu : StateFlow<Boolean> = _showMenu.asStateFlow()
+
     //gemini
+    //Do not activate paid version.
     private val aiModel = GenerativeModel(
         "gemini-2.5-flash",
         apiKey = "AIzaSyBdaBVs0aMk3KJo0pfjbE5gg_uqHER1IuM",
@@ -196,6 +205,25 @@ class ViewerViewModel() : ViewModel() {
         }
     }
 
+    fun changeMenuState(
+        newState: ToolMenuState? = ToolMenuState.None,
+        title: Int? = null
+    ) {
+        if(newState == null || newState == toolMenuState.value ) {
+            _showMenu.update { false }
+            _toolMenuState.update {
+                ToolMenuState.None
+            }
+            _titleResId.update { null }
+        } else {
+            _showMenu.update { true }
+            _toolMenuState.update {
+                newState
+            }
+            _titleResId.update { title }
+        }
+    }
+
     private
     var textToSpeech: TextToSpeech? = null
     fun textToSpeech(
@@ -241,3 +269,12 @@ data class ViewerUiState(
     val transcript: String = "",
     val askableRes: String = ""
 )
+
+sealed interface ToolMenuState {
+    object None : ToolMenuState
+    object CameraView : ToolMenuState
+    object MicView : ToolMenuState
+    object Menu : ToolMenuState
+    object RecordPermission : ToolMenuState
+    object CameraPermission : ToolMenuState
+}
