@@ -1,26 +1,27 @@
 package com.dreamyducks.navcook.ui.recipeViewer
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
-import androidx.camera.core.CameraSelector
+import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
-import androidx.camera.core.UseCaseGroup
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -36,14 +37,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dreamyducks.navcook.R
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -75,105 +75,154 @@ fun CameraView(
     Box(
         modifier = modifier
     ) {
-        if (capturedImage == null) {
-            CameraScreen(
-                context = context,
-                lifecycleOwner = lifecycleOwner,
-                onCapture = { bitmap ->
-                    capturedImage = bitmap
-                }
-            )
-        } else {
-            viewerViewModel.updateAskableInput(capturedImage!!)
-            onCapture()
-            AnswerView(
-                viewerViewModel
-            )
-        }
+        CameraPreviewContent(
+            viewerViewModel
+        )
+//        if (capturedImage == null) {
+//            CameraScreen(
+//                context = context,
+//                lifecycleOwner = lifecycleOwner,
+//                onCapture = { bitmap ->
+//                    capturedImage = bitmap
+//                }
+//            )
+//        } else {
+//            viewerViewModel.updateAskableInput(capturedImage!!)
+//            onCapture()
+//            AnswerView(
+//                viewerViewModel
+//            )
+//        }
     }
 }
 
-@Composable
-private fun CameraScreen(
-    context: Context,
-    lifecycleOwner: LifecycleOwner,
-    onCapture: (Bitmap) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }//{ ProcessCameraProvider.getInstance(context) }
-    var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
-    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    var preview by remember { mutableStateOf<androidx.camera.core.Preview?>(null) }
+//@Composable
+//private fun CameraScreen(
+//    context: Context,
+//    lifecycleOwner: LifecycleOwner,
+//    onCapture: (Bitmap) -> Unit,
+//    modifier: Modifier = Modifier
+//) {
+//    val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }//{ ProcessCameraProvider.getInstance(context) }
+//    var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
+//    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
+//    var preview by remember { mutableStateOf<androidx.camera.core.Preview?>(null) }
+//
+//    var captureClicked by remember { mutableStateOf(true) }
+//
+//    Box(
+//        modifier = modifier
+//            .fillMaxSize()
+//    ) {
+//        if (preview != null) {
+//            AndroidView(
+//                factory = {
+//                    PreviewView(it).apply {
+//                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+//                        scaleType = PreviewView.ScaleType.FILL_CENTER
+//                    }
+//                },
+//                update = { previewView ->
+//                    preview?.setSurfaceProvider(previewView.surfaceProvider)
+//                },
+//                modifier = modifier.fillMaxSize()
+//            )
+//        }
+//        Button(
+//            onClick = {
+//                captureClicked = false
+//                imageCapture?.let {
+//                    captureImage(
+//                        it,
+//                        cameraExecutor,
+//                        onImageCapture = { bitmap -> onCapture(bitmap) }
+//                    )
+//                }
+//            },
+//            enabled = captureClicked,
+//            modifier = modifier
+//                .align(Alignment.BottomCenter)
+//                .padding(dimensionResource(R.dimen.padding_medium))
+//        ) {
+//            Text("Take Picture")
+//        }
+//    }
+//
+//    LaunchedEffect(Unit) {
+//        cameraProviderFuture.addListener({
+//            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+//
+//            preview = androidx.camera.core.Preview.Builder().build()
+//            imageCapture = ImageCapture.Builder().build()
+//
+//            try {
+//                cameraProvider.unbindAll()
+//                val useCaseGroup = UseCaseGroup.Builder()
+//                    .addUseCase(preview!!)
+//                    .addUseCase(imageCapture!!)
+//                    .build()
+//                cameraProvider.bindToLifecycle(
+//                    lifecycleOwner,
+//                    CameraSelector.DEFAULT_BACK_CAMERA,
+//                    useCaseGroup
+//                )
+//                preview?.setSurfaceProvider(
+//                    PreviewView(context).surfaceProvider
+//                )
+//            } catch (exe: Exception) {
+//                Log.e("CameraX", "Use case binding failed", exe)
+//            }
+//        }, ContextCompat.getMainExecutor(context))
+//    }
+//    DisposableEffect(cameraExecutor) {
+//        onDispose {
+//            cameraExecutor.shutdown()
+//        }
+//    }
+//}
 
-    var captureClicked by remember { mutableStateOf(true) }
+@Composable
+fun CameraPreviewContent(
+    viewModel: ViewerViewModel,
+    modifier: Modifier = Modifier,
+    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
+) {
+    val surfaceRequest by viewModel.surfaceRequest.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    LaunchedEffect(lifecycleOwner) {
+        viewModel.bindToCamera(context.applicationContext, lifecycleOwner)
+    }
+
+    var capturedBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     Box(
         modifier = modifier
             .fillMaxSize()
     ) {
-        if (preview != null) {
-            AndroidView(
-                factory = {
-                    PreviewView(it).apply {
-                        implementationMode = PreviewView.ImplementationMode.COMPATIBLE
-                        scaleType = PreviewView.ScaleType.FILL_CENTER
-                    }
-                },
-                update = { previewView ->
-                    preview?.setSurfaceProvider(previewView.surfaceProvider)
-                },
-                modifier = modifier.fillMaxSize()
+        surfaceRequest?.let { request ->
+            CameraXViewfinder(
+                surfaceRequest = request,
+                modifier = modifier
             )
         }
         Button(
             onClick = {
-                captureClicked = false
-                imageCapture?.let {
-                    captureImage(
-                        it,
-                        cameraExecutor,
-                        onImageCapture = { bitmap -> onCapture(bitmap) }
-                    )
-                }
+                viewModel.takePhoto(
+                    context = context,
+                    onImageCaptured = { bitmap ->
+                        capturedBitmap = bitmap
+                    }
+                )
             },
-            enabled = captureClicked,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
+            shape = RoundedCornerShape(25.dp),
             modifier = modifier
                 .align(Alignment.BottomCenter)
-                .padding(dimensionResource(R.dimen.padding_medium))
         ) {
-            Text("Take Picture")
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        cameraProviderFuture.addListener({
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-            preview = androidx.camera.core.Preview.Builder().build()
-            imageCapture = ImageCapture.Builder().build()
-
-            try {
-                cameraProvider.unbindAll()
-                val useCaseGroup = UseCaseGroup.Builder()
-                    .addUseCase(preview!!)
-                    .addUseCase(imageCapture!!)
-                    .build()
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    useCaseGroup
-                )
-                preview?.setSurfaceProvider(
-                    PreviewView(context).surfaceProvider
-                )
-            } catch (exe: Exception) {
-                Log.e("CameraX", "Use case binding failed", exe)
-            }
-        }, ContextCompat.getMainExecutor(context))
-    }
-    DisposableEffect(cameraExecutor) {
-        onDispose {
-            cameraExecutor.shutdown()
+            Icon(Icons.Outlined.CameraAlt, null)
         }
     }
 }

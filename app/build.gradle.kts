@@ -89,14 +89,15 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.4.0")
 
     //camera
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.compose)
     implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.androidx.camera.view)
-    implementation("androidx.camera:camera-core:1.5.0")
-    implementation("androidx.camera:camera-camera2:1.5.0")
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.accompanist.permissions)
 
     //Vosk voice recognition
-    implementation("net.java.dev.jna:jna:5.18.1@aar")
-    implementation("com.alphacephei:vosk-android:0.3.70")
+    implementation("net.java.dev.jna:jna:5.13.0@aar")
+    implementation("com.alphacephei:vosk-android:0.3.47")
 
     //Room
     implementation("androidx.room:room-runtime:${rootProject.extra["room_version"]}")

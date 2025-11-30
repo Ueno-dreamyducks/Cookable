@@ -1,11 +1,20 @@
 package com.dreamyducks.navcook.ui.recipeViewer
 
 import android.content.Context
-import android.content.Intent
 import android.graphics.Bitmap
-import android.speech.RecognizerIntent
+import android.graphics.BitmapFactory
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.ImageProxy
+import androidx.camera.core.Preview
+import androidx.camera.core.SurfaceRequest
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.lifecycle.awaitInstance
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dreamyducks.navcook.BuildConfig
@@ -15,6 +24,7 @@ import com.google.ai.client.generativeai.GenerativeModel
 import com.google.ai.client.generativeai.type.content
 import com.google.ai.client.generativeai.type.generationConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,6 +49,18 @@ class ViewerViewModel() : ViewModel() {
     //vosk voice recognition
     private var model: Model? = null
     private var speechService: SpeechService? = null
+
+    //Camera
+    private val _surfaceRequest = MutableStateFlow<SurfaceRequest?>(null)
+    val surfaceRequest: StateFlow<SurfaceRequest?> = _surfaceRequest
+
+    private val cameraPreviewUseCase = Preview.Builder().build().apply {
+        setSurfaceProvider { newSurfaceRequest ->
+            _surfaceRequest.update { newSurfaceRequest }
+        }
+    }
+    private val imageCaptureUseCase = ImageCapture.Builder()
+        .build()
 
     //Tool menu state
     private val _toolMenuState = MutableStateFlow<ToolMenuState>(ToolMenuState.None)
@@ -87,32 +109,25 @@ class ViewerViewModel() : ViewModel() {
         }
     }
 
+    //initialize voice recognition
     fun initVosk(context: Context) {
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-            )
-        }
-
-        val appContext = context.applicationContext
         StorageService.unpack(
-            appContext,
+            context,
             "vosk-model-small-en-us-0.15",
             "model",
             { unpackedModel ->
                 model = unpackedModel
-                startListening(appContext)
+                startListening()
             },
             { exception ->
-                Log.e("VOSK", "Failed to unpack ${exception.message}")
+                Log.e("VOSK", "Failed to unpack ${exception}")
                 throw exception
             }
         )
     }
 
     //vosk voice recognition
-    private fun startListening(context: Context) {
+    private fun startListening() {
         val stopTerms = listOf("stop", "pause")
         val nextTerm = listOf("next step", "next")
         val previousTerm = listOf("back", "go back", "previous", "previous step")
@@ -186,6 +201,38 @@ class ViewerViewModel() : ViewModel() {
             //isRunning = false
             Log.d("Voice Recognition", "Paused")
         }
+    }
+
+    //camera
+    suspend fun bindToCamera(context: Context, lifecycleOwner: LifecycleOwner) {
+        val processCameraProvider = ProcessCameraProvider.awaitInstance(context)
+        processCameraProvider.bindToLifecycle(
+            lifecycleOwner, DEFAULT_BACK_CAMERA, cameraPreviewUseCase, imageCaptureUseCase
+        )
+
+        // Cancellation signals we're done with the camera
+        try { awaitCancellation() } finally { processCameraProvider.unbindAll() }
+    }
+
+    fun takePhoto(context: Context, onImageCaptured : (Bitmap) -> Unit) {
+        val executor = ContextCompat.getMainExecutor(context)
+        imageCaptureUseCase.takePicture(
+            executor,
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    val buffer = image.planes[0].buffer
+                    val bytes = ByteArray(buffer.remaining())
+                    buffer.get(bytes)
+                    val bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    image.close()
+                    onImageCaptured(bitmap)
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.e("CameraX", "Photo capture failed: $exception" )
+                }
+            }
+        )
     }
 
     fun updateViewerUiState(newState: ViewerUiState) {
