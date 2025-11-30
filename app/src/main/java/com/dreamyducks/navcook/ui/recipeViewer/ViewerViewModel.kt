@@ -1,11 +1,14 @@
 package com.dreamyducks.navcook.ui.recipeViewer
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
+import android.speech.RecognizerIntent
 import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.dreamyducks.navcook.BuildConfig
 import com.dreamyducks.navcook.data.RecipeManager
 import com.dreamyducks.navcook.network.Recipe
 import com.google.ai.client.generativeai.GenerativeModel
@@ -46,10 +49,9 @@ class ViewerViewModel() : ViewModel() {
     val showMenu : StateFlow<Boolean> = _showMenu.asStateFlow()
 
     //gemini
-    //Do not activate paid version.
     private val aiModel = GenerativeModel(
         "gemini-2.5-flash",
-        apiKey = "AIzaSyBdaBVs0aMk3KJo0pfjbE5gg_uqHER1IuM",
+        apiKey = BuildConfig.GEMINI_API_KEY,
         generationConfig = generationConfig {
             temperature = 1f
             topK = 40
@@ -86,11 +88,21 @@ class ViewerViewModel() : ViewModel() {
     }
 
     fun initVosk(context: Context) {
+        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+            putExtra(
+                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+            )
+        }
+
+        val appContext = context.applicationContext
         StorageService.unpack(
-            context, "vosk-model-small-en-us-0.15", "model",
+            appContext,
+            "vosk-model-small-en-us-0.15",
+            "model",
             { unpackedModel ->
                 model = unpackedModel
-                startListening(context)
+                startListening(appContext)
             },
             { exception ->
                 Log.e("VOSK", "Failed to unpack ${exception.message}")
@@ -209,7 +221,7 @@ class ViewerViewModel() : ViewModel() {
         newState: ToolMenuState? = ToolMenuState.None,
         title: Int? = null
     ) {
-        if(newState == null || newState == toolMenuState.value ) {
+        if(newState == null || newState == ToolMenuState.None || newState == toolMenuState.value ) {
             _showMenu.update { false }
             _toolMenuState.update {
                 ToolMenuState.None

@@ -7,6 +7,7 @@ import android.net.Uri
 import android.provider.Settings
 import android.view.WindowManager
 import androidx.activity.compose.BackHandler
+import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
@@ -108,6 +109,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -356,10 +358,10 @@ private fun OverlayControl(
     val toolMenuState = viewModel.toolMenuState.collectAsState()
     val titleResId = viewModel.titleResId.collectAsState()
     val showMenu = viewModel.showMenu.collectAsState()
-    val toolMenuContent: @Composable () -> Unit = {
+    val toolMenuContent: @Composable () -> Unit = { //for UI
         when (toolMenuState.value) {
             is ToolMenuState.None -> {}
-            is ToolMenuState.MicView -> {
+            is ToolMenuState.RecordPermission -> {
                 if (!micPermissionStatus.status.isGranted) {
                     PermissionCard(
                         shouldShowRationale = micPermissionStatus.status.shouldShowRationale,
@@ -369,12 +371,6 @@ private fun OverlayControl(
                             micPermissionStatus.launchPermissionRequest()
                         }
                     )
-                } else {
-                    if (viewerUiState.value.isMicOn) {
-                        viewModel.pause()
-                    } else {
-                        viewModel.initVosk(context)
-                    }
                 }
             }
 
@@ -411,8 +407,20 @@ private fun OverlayControl(
                     onShowExitDialog = onShowExitDialog
                 )
             }
+
             else -> {
                 Text("")
+            }
+        }
+    }
+    LaunchedEffect(toolMenuState.value) { //tool menu for side-effects
+        if(micPermissionStatus.status.isGranted) {
+            if (toolMenuState.value == ToolMenuState.MicView) {
+                if (viewerUiState.value.isMicOn) {
+                    viewModel.pause()
+                } else {
+                    viewModel.initVosk(context)
+                }
             }
         }
     }
@@ -478,9 +486,7 @@ private fun OverlayControl(
                     modifier = modifier
                         .align(Alignment.BottomCenter),
                     closeMenu = {
-                        viewModel.changeMenuState(
-                            newState = ToolMenuState.None
-                        )
+                        viewModel.changeMenuState() //reset state
                     },
                     titleResId = titleResId.value
                 ) {
@@ -488,6 +494,8 @@ private fun OverlayControl(
                 }
             }
         }
+        val surfaceRequests = remember { MutableStateFlow<SurfaceRequest?>(null) }
+        val surfaceRequest by surfaceRequests.collectAsState(initial = null)
         Card(
             shape = RoundedCornerShape(
                 animatedOverlayRadius,
@@ -540,20 +548,9 @@ private fun OverlayControl(
                 }
                 IconButton(
                     onClick = {
-                        if (!micPermissionStatus.status.isGranted) { //show mic permission request
-                            viewModel.changeMenuState(
-                                newState = ToolMenuState.MicView
-                            )
-                        } else { //Granted
-                            viewModel.changeMenuState(
-                                newState = ToolMenuState.MicView
-                            )
-                            if (viewerUiState.value.isMicOn) {
-                                viewModel.pause()
-                            } else {
-                                viewModel.initVosk(context)
-                            }
-                        }
+                        viewModel.changeMenuState(
+                            newState = if(micPermissionStatus.status.isGranted) ToolMenuState.MicView else ToolMenuState.RecordPermission
+                        )
                     },
                     modifier = modifier
                         .clip(RoundedCornerShape(50.dp))
@@ -606,27 +603,6 @@ private fun OverlayControl(
         }
     }
 }
-
-private fun changeMenuState(
-    currentState: ToolMenuState?,
-    clickedMenuState: ToolMenuState? = null,
-    clickedStateTitleResId: Int? = null,
-    onShowMenuChange: (Boolean) -> Unit,
-    newState: (ToolMenuState) -> Unit,
-    newTitle: (Int?) -> Unit,
-) {
-    if (clickedMenuState == null || currentState == clickedMenuState) {
-        onShowMenuChange(false)
-        newState(ToolMenuState.None)
-        newTitle(null)
-    } else {
-        onShowMenuChange(true)
-        newState(clickedMenuState)
-        newTitle(clickedStateTitleResId)
-    }
-
-}
-
 
 @Composable
 private fun ToolMenu(
