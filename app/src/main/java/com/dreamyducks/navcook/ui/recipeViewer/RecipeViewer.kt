@@ -414,13 +414,13 @@ private fun OverlayControl(
         }
     }
     LaunchedEffect(toolMenuState.value) { //tool menu for side-effects
-        if(micPermissionStatus.status.isGranted) {
+        if (micPermissionStatus.status.isGranted) {
             if (toolMenuState.value == ToolMenuState.MicView) {
-                if (viewerUiState.value.isMicOn) {
-                    viewModel.pause()
-                } else {
-                    viewModel.initVosk(context)
-                }
+                viewModel.initVosk(context)
+            }
+            if(toolMenuState.value == ToolMenuState.MicPause) {
+                viewModel.pause()
+                viewModel.changeMenuState()
             }
         }
     }
@@ -549,7 +549,14 @@ private fun OverlayControl(
                 IconButton(
                     onClick = {
                         viewModel.changeMenuState(
-                            newState = if(micPermissionStatus.status.isGranted) ToolMenuState.MicView else ToolMenuState.RecordPermission
+                            newState = if (micPermissionStatus.status.isGranted) {
+                                if(viewerUiState.value.isMicOn) {
+                                    ToolMenuState.MicPause
+                                } else {
+                                    ToolMenuState.MicView
+                                }
+                            } else ToolMenuState.RecordPermission,
+                            isShowMenu = if (micPermissionStatus.status.isGranted) false else true
                         )
                     },
                     modifier = modifier

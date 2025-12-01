@@ -96,8 +96,8 @@ dependencies {
     implementation(libs.accompanist.permissions)
 
     //Vosk voice recognition
-    implementation("net.java.dev.jna:jna:5.13.0@aar")
-    implementation("com.alphacephei:vosk-android:0.3.47")
+    implementation("net.java.dev.jna:jna:5.18.1@aar")
+    implementation("com.alphacephei:vosk-android:0.3.70")
 
     //Room
     implementation("androidx.room:room-runtime:${rootProject.extra["room_version"]}")

@@ -195,6 +195,10 @@ class ViewerViewModel() : ViewModel() {
                 )
             )
 
+            changeMenuState(
+                newState = ToolMenuState.None,
+            )
+
             speechService?.stop()
             speechService?.shutdown()
             speechService = null
@@ -266,16 +270,21 @@ class ViewerViewModel() : ViewModel() {
 
     fun changeMenuState(
         newState: ToolMenuState? = ToolMenuState.None,
-        title: Int? = null
+        title: Int? = null,
+        isShowMenu: Boolean = true
     ) {
-        if(newState == null || newState == ToolMenuState.None || newState == toolMenuState.value ) {
+        if(newState == null || newState == ToolMenuState.None || newState == toolMenuState.value ) { //hide menu
             _showMenu.update { false }
             _toolMenuState.update {
                 ToolMenuState.None
             }
             _titleResId.update { null }
         } else {
-            _showMenu.update { true }
+            if(isShowMenu) {
+                _showMenu.update { true }
+            } else {
+                _showMenu.update { false }
+            }
             _toolMenuState.update {
                 newState
             }
@@ -333,6 +342,7 @@ sealed interface ToolMenuState {
     object None : ToolMenuState
     object CameraView : ToolMenuState
     object MicView : ToolMenuState
+    object MicPause : ToolMenuState
     object Menu : ToolMenuState
     object RecordPermission : ToolMenuState
     object CameraPermission : ToolMenuState
