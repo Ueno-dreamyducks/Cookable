@@ -49,12 +49,10 @@ import java.util.concurrent.ExecutorService
 @Composable
 fun CameraView(
     viewerViewModel: ViewerViewModel,
-    onCapture: () -> Unit,
+    onCaptured: (Bitmap) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    var capturedImage by remember { mutableStateOf<Bitmap?>(null) }
-    val lifecycleOwner = LocalLifecycleOwner.current
+    var isAnswerReady by remember { mutableStateOf(false) }
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     val backCallback = remember {
@@ -75,9 +73,23 @@ fun CameraView(
     Box(
         modifier = modifier
     ) {
-        CameraPreviewContent(
-            viewerViewModel
-        )
+        when(isAnswerReady) {
+            true -> {
+                AnswerView(
+                    viewModel = viewerViewModel
+                )
+            }
+            false -> {
+                CameraPreviewContent(
+                    viewModel = viewerViewModel,
+                    onCaptured = {
+                        onCaptured(it)
+                        isAnswerReady = true
+                    }
+                )
+            }
+        }
+
 //        if (capturedImage == null) {
 //            CameraScreen(
 //                context = context,
@@ -184,6 +196,7 @@ fun CameraView(
 @Composable
 fun CameraPreviewContent(
     viewModel: ViewerViewModel,
+    onCaptured: (Bitmap) -> Unit,
     modifier: Modifier = Modifier,
     lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
 ) {
@@ -211,6 +224,7 @@ fun CameraPreviewContent(
                     context = context,
                     onImageCaptured = { bitmap ->
                         capturedBitmap = bitmap
+                        onCaptured(bitmap)
                     }
                 )
             },

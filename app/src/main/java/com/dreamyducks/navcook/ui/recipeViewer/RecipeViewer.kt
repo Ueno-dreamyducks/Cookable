@@ -110,7 +110,6 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -206,7 +205,6 @@ fun RecipeViewer(
                 overlayHeight = dp
             },
             viewModel = viewModel,
-            recipeUiState = recipeUiState,
             onShowExitDialog = { showExitDialog = true },
         )
 
@@ -330,7 +328,6 @@ private fun OverlayControl(
     modifier: Modifier = Modifier,
     innerPadding: PaddingValues,
     viewModel: ViewerViewModel,
-    recipeUiState: StateFlow<Recipe?>,
     isChangingStep: Boolean,
     overlayHeight: (Dp) -> Unit,
     onShowExitDialog: () -> Unit,
@@ -395,7 +392,9 @@ private fun OverlayControl(
                     )
                     CameraView(
                         viewerViewModel = viewModel,
-                        onCapture = { viewModel.generateAskable() }
+                        onCaptured = { bitmap ->
+                            viewModel.generateAskable(bitmap)
+                        }
                     )
                 }
             }
@@ -418,7 +417,7 @@ private fun OverlayControl(
             if (toolMenuState.value == ToolMenuState.MicView) {
                 viewModel.initVosk(context)
             }
-            if(toolMenuState.value == ToolMenuState.MicPause) {
+            if (toolMenuState.value == ToolMenuState.MicPause) {
                 viewModel.pause()
                 viewModel.changeMenuState()
             }
@@ -503,6 +502,10 @@ private fun OverlayControl(
                 dimensionResource(R.dimen.padding_extra_large),
                 dimensionResource(R.dimen.padding_extra_large)
             ),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ),
             modifier = modifier
                 .align(Alignment.BottomCenter)
                 .padding(bottom = dimensionResource(R.dimen.padding_extra_large))
@@ -550,7 +553,7 @@ private fun OverlayControl(
                     onClick = {
                         viewModel.changeMenuState(
                             newState = if (micPermissionStatus.status.isGranted) {
-                                if(viewerUiState.value.isMicOn) {
+                                if (viewerUiState.value.isMicOn) {
                                     ToolMenuState.MicPause
                                 } else {
                                     ToolMenuState.MicView
@@ -630,6 +633,10 @@ private fun ToolMenu(
     ) {
         Card(
             elevation = CardDefaults.cardElevation(defaultElevation = dimensionResource(R.dimen.padding_small)),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+            ),
             modifier = modifier
                 .heightIn(min = 0.dp, max = (toolMenuHeight))
                 .fillMaxWidth(0.7f)

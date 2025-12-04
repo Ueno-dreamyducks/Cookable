@@ -35,10 +35,12 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -109,41 +111,44 @@ fun RecipeOverviewScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.secondaryContainer)
     ) {
-        OverlayControl(
-            controlHeight = { px ->
-                controlHeight = with(density) { px.toDp() + 8.dp }
-            },
-            onNavigateBack = onNavigateBack,
-            onStartClick = onStartClick,
-            isBigImage = isBigThumbnail,
-            innerPadding = innerPadding,
-            modifier = modifier
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .zIndex(2f)
-        )
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .verticalScroll(scrollState)
-        ) {
-            BigPicture(
-                recipe = recipe.value,
-                imagePixelHeight = { height -> imagePixelHeight = height }
+        CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onSecondaryContainer) {
+            OverlayControl(
+                controlHeight = { px ->
+                    controlHeight = with(density) { px.toDp() + 8.dp }
+                },
+                onNavigateBack = onNavigateBack,
+                onStartClick = onStartClick,
+                isBigImage = isBigThumbnail,
+                innerPadding = innerPadding,
+                modifier = modifier
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .zIndex(2f)
             )
             Column(
                 modifier = modifier
-                    .padding(dimensionResource(R.dimen.padding_medium))
-                    .padding(bottom = controlHeight)
+                    .fillMaxSize()
+                    .verticalScroll(scrollState)
             ) {
-                Info(recipe = recipe.value)
-                Spacer(modifier.padding(bottom = dimensionResource(R.dimen.padding_small)))
-                if (recipe.value!!.description.isNotEmpty()) {
-                    Description(recipe = recipe.value)
-                }
-                Ingredients(
-                    recipe = recipe.value
+                BigPicture(
+                    recipe = recipe.value,
+                    imagePixelHeight = { height -> imagePixelHeight = height }
                 )
+                Column(
+                    modifier = modifier
+                        .padding(dimensionResource(R.dimen.padding_medium))
+                        .padding(bottom = controlHeight)
+                ) {
+                    Info(recipe = recipe.value)
+                    Spacer(modifier.padding(bottom = dimensionResource(R.dimen.padding_small)))
+                    if (recipe.value!!.description.isNotEmpty()) {
+                        Description(recipe = recipe.value)
+                    }
+                    Ingredients(
+                        recipe = recipe.value
+                    )
+                }
             }
         }
     }
@@ -431,8 +436,8 @@ private fun IngredientWithCheckbox(
     var checked by remember { mutableStateOf(false) }
 
 
-    val convertedAmount = if(ingredient.amount != null) {
-        if(ingredient.amount.compareTo(ingredient.amount.toInt()) == 0) {
+    val convertedAmount = if (ingredient.amount != null) {
+        if (ingredient.amount.compareTo(ingredient.amount.toInt()) == 0) {
             ingredient.amount.toInt()
         } else {
             ingredient.amount

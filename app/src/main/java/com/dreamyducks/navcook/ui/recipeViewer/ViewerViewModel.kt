@@ -66,9 +66,9 @@ class ViewerViewModel() : ViewModel() {
     private val _toolMenuState = MutableStateFlow<ToolMenuState>(ToolMenuState.None)
     val toolMenuState: StateFlow<ToolMenuState> = _toolMenuState.asStateFlow()
     private val _titleResId = MutableStateFlow<Int?>(null)
-    val titleResId : StateFlow<Int?> = _titleResId.asStateFlow()
+    val titleResId: StateFlow<Int?> = _titleResId.asStateFlow()
     private val _showMenu = MutableStateFlow(false)
-    val showMenu : StateFlow<Boolean> = _showMenu.asStateFlow()
+    val showMenu: StateFlow<Boolean> = _showMenu.asStateFlow()
 
     //gemini
     private val aiModel = GenerativeModel(
@@ -83,29 +83,27 @@ class ViewerViewModel() : ViewModel() {
         },
     )
 
-    private val _askableInput = MutableStateFlow<Bitmap?>(null)
-    val askableInput: StateFlow<Bitmap?> = _askableInput.asStateFlow()
     private val _isCoolDown = MutableStateFlow(false)
     private var isCoolDown: StateFlow<Boolean> = _isCoolDown.asStateFlow()
 
     //gemini; askable
-    fun generateAskable() {
-        if(askableInput.value != null ) { // check if image is in
-            viewModelScope.launch(Dispatchers.IO) {
-                updateViewerUiState(viewerUiState.value.copy(askableRes = "")) //reset askable response
-                val question = recipe.value!!.steps[viewerUiState.value.currentIndex].askable
-                val inputContent = content {
-                    image(askableInput.value!!)
-                    text("Answer in two sentences: First, just yes/no; then write a sentence summary of is it to this: $question")
-                }
-
-                val response =
-                    aiModel.generateContent(inputContent)
-
-                updateViewerUiState(
-                    viewerUiState.value.copy(askableRes = response.text.orEmpty())
-                )
+    fun generateAskable(
+        image: Bitmap
+    ) {
+        viewModelScope.launch(Dispatchers.IO) {
+            updateViewerUiState(viewerUiState.value.copy(askableRes = "")) //reset askable response
+            val question = recipe.value!!.steps[viewerUiState.value.currentIndex].askable
+            val inputContent = content {
+                image(image)
+                text("Answer in two sentences: First, just yes/no; then write a sentence summary of is it to this: $question")
             }
+
+            val response =
+                aiModel.generateContent(inputContent)
+
+            updateViewerUiState(
+                viewerUiState.value.copy(askableRes = response.text.orEmpty())
+            )
         }
     }
 
@@ -215,10 +213,14 @@ class ViewerViewModel() : ViewModel() {
         )
 
         // Cancellation signals we're done with the camera
-        try { awaitCancellation() } finally { processCameraProvider.unbindAll() }
+        try {
+            awaitCancellation()
+        } finally {
+            processCameraProvider.unbindAll()
+        }
     }
 
-    fun takePhoto(context: Context, onImageCaptured : (Bitmap) -> Unit) {
+    fun takePhoto(context: Context, onImageCaptured: (Bitmap) -> Unit) {
         val executor = ContextCompat.getMainExecutor(context)
         imageCaptureUseCase.takePicture(
             executor,
@@ -233,7 +235,7 @@ class ViewerViewModel() : ViewModel() {
                 }
 
                 override fun onError(exception: ImageCaptureException) {
-                    Log.e("CameraX", "Photo capture failed: $exception" )
+                    Log.e("CameraX", "Photo capture failed: $exception")
                 }
             }
         )
@@ -241,10 +243,6 @@ class ViewerViewModel() : ViewModel() {
 
     fun updateViewerUiState(newState: ViewerUiState) {
         _viewerUiState.value = newState
-    }
-
-    fun updateAskableInput(new: Bitmap) {
-        _askableInput.value = new
     }
 
     fun updateUiStateIndex(changeAmount: Int) {
@@ -273,14 +271,14 @@ class ViewerViewModel() : ViewModel() {
         title: Int? = null,
         isShowMenu: Boolean = true
     ) {
-        if(newState == null || newState == ToolMenuState.None || newState == toolMenuState.value ) { //hide menu
+        if (newState == null || newState == ToolMenuState.None || newState == toolMenuState.value) { //hide menu
             _showMenu.update { false }
             _toolMenuState.update {
                 ToolMenuState.None
             }
             _titleResId.update { null }
         } else {
-            if(isShowMenu) {
+            if (isShowMenu) {
                 _showMenu.update { true }
             } else {
                 _showMenu.update { false }
